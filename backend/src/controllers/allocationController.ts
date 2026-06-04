@@ -1,0 +1,161 @@
+// backend/src/controllers/allocationController.ts
+
+import { Request, Response } from "express";
+import Allocation from "../models/Allocation";
+
+export const createAllocation = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    try {
+        const {
+            employee,
+            allocationPercentage,
+            startDate,
+            endDate,
+        } = req.body;
+
+        const existingAllocations =
+            await Allocation.find({ employee });
+
+        const totalAllocation =
+            existingAllocations.reduce(
+                (sum, allocation) =>
+                    sum + allocation.allocationPercentage,
+                0
+            );
+
+        if (
+            totalAllocation + allocationPercentage >
+            100
+        ) {
+            res.status(400).json({
+                success: false,
+                message: "Allocation exceeds 100%",
+            });
+            return;
+        }
+
+        if (
+            new Date(endDate).getTime() <=
+            new Date(startDate).getTime()
+        ) {
+            res.status(400).json({
+                success: false,
+                message:
+                    "End date must be after start date",
+            });
+            return;
+        }
+
+        const allocation =
+            await Allocation.create(req.body);
+
+        res.status(201).json({
+            success: true,
+            data: allocation,
+        });
+    } catch (error) {
+        console.error(error);
+
+        res.status(500).json({
+            success: false,
+            message: "Failed to create allocation",
+        });
+    }
+};
+
+export const getAllocations = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    try {
+        const allocations =
+            await Allocation.find()
+                .populate(
+                    "employee",
+                    "firstName lastName email role"
+                )
+                .populate(
+                    "project",
+                    "projectName status"
+                );
+
+        res.status(200).json({
+            success: true,
+            count: allocations.length,
+            data: allocations,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch allocations",
+        });
+    }
+};
+
+export const updateAllocation = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    try {
+        const allocation =
+            await Allocation.findByIdAndUpdate(
+                req.params.id,
+                req.body,
+                {
+                    new: true,
+                    runValidators: true,
+                }
+            );
+
+        if (!allocation) {
+            res.status(404).json({
+                success: false,
+                message: "Allocation not found",
+            });
+            return;
+        }
+
+        res.status(200).json({
+            success: true,
+            data: allocation,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to update allocation",
+        });
+    }
+};
+
+export const deleteAllocation = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    try {
+        const allocation =
+            await Allocation.findByIdAndDelete(
+                req.params.id
+            );
+
+        if (!allocation) {
+            res.status(404).json({
+                success: false,
+                message: "Allocation not found",
+            });
+            return;
+        }
+
+        res.status(200).json({
+            success: true,
+            message:
+                "Allocation deleted successfully",
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to delete allocation",
+        });
+    }
+};
