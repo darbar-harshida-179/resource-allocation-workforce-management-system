@@ -109,3 +109,85 @@ export const searchEmployees = async (
         });
     }
 };
+
+export const addSkillsToEmployee = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    try {
+        const { skills } = req.body;
+
+        const employee = await User.findByIdAndUpdate(
+            req.params.id,
+            {
+                skills,
+            },
+            {
+                new: true,
+                runValidators: true,
+            }
+        ).select(
+            "-password -refreshToken -verificationToken -resetPasswordToken"
+        );
+
+        if (!employee) {
+            res.status(404).json({
+                success: false,
+                message: "Employee not found",
+            });
+            return;
+        }
+
+        res.status(200).json({
+            success: true,
+            data: employee,
+            message: "Skills added successfully",
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to add skills",
+        });
+    }
+};
+
+export const assignDepartment = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    try {
+        const { department } = req.body;
+
+        const employee = await User.findByIdAndUpdate(
+            req.params.id,
+            {
+                department,
+            },
+            {
+                new: true,
+                runValidators: true,
+            }
+        ).select(
+            "-password -refreshToken -verificationToken -resetPasswordToken"
+        );
+
+        if (!employee) {
+            res.status(404).json({
+                success: false,
+                message: "Employee not found",
+            });
+            return;
+        }
+
+        res.status(200).json({
+            success: true,
+            data: employee,
+            message: "Department assigned successfully",
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to assign department",
+        });
+    }
+};
