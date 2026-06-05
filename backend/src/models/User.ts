@@ -17,6 +17,11 @@ export interface IUser extends Document {
   department?: string;
   skills?: string[];
   isActive: boolean;
+  refreshToken?: string;
+  resetPasswordToken?: string;
+  resetPasswordExpire?: Date;
+  verificationToken?: string;
+  isVerified?: boolean;
 }
 
 const userSchema = new Schema<IUser>(
@@ -65,6 +70,27 @@ const userSchema = new Schema<IUser>(
     isActive: {
       type: Boolean,
       default: true,
+    },
+
+    refreshToken: {
+      type: String,
+    },
+
+    resetPasswordToken: {
+      type: String,
+    },
+
+    resetPasswordExpire: {
+      type: Date,
+    },
+
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    verificationToken: {
+      type: String,
     },
   },
   {
