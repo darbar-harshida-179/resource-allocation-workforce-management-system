@@ -2,6 +2,7 @@
 
 import { Request, Response } from "express";
 import Allocation from "../models/Allocation";
+import AllocationHistory from "../models/AllocationHistory";
 
 export const createAllocation = async (
     req: Request,
@@ -50,6 +51,14 @@ export const createAllocation = async (
 
         const allocation =
             await Allocation.create(req.body);
+
+        await AllocationHistory.create({
+            employee: allocation.employee,
+            project: allocation.project,
+            allocationPercentage:
+                allocation.allocationPercentage,
+            action: "created",
+        });
 
         res.status(201).json({
             success: true,
@@ -116,6 +125,13 @@ export const updateAllocation = async (
             });
             return;
         }
+        await AllocationHistory.create({
+            employee: allocation.employee,
+            project: allocation.project,
+            allocationPercentage:
+                allocation.allocationPercentage,
+            action: "updated",
+        });
 
         res.status(200).json({
             success: true,
@@ -147,6 +163,14 @@ export const deleteAllocation = async (
             return;
         }
 
+        await AllocationHistory.create({
+            employee: allocation.employee,
+            project: allocation.project,
+            allocationPercentage:
+                allocation.allocationPercentage,
+            action: "deleted",
+        });
+
         res.status(200).json({
             success: true,
             message:
@@ -156,6 +180,36 @@ export const deleteAllocation = async (
         res.status(500).json({
             success: false,
             message: "Failed to delete allocation",
+        });
+    }
+};
+
+export const getAllocationHistory = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    try {
+        const history = await AllocationHistory.find()
+            .populate(
+                "employee",
+                "firstName lastName email"
+            )
+            .populate(
+                "project",
+                "projectName"
+            )
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            count: history.length,
+            data: history,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message:
+                "Failed to fetch allocation history",
         });
     }
 };
