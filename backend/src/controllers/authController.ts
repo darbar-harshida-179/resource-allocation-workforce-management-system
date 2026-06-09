@@ -7,6 +7,7 @@ import jwt from "jsonwebtoken";
 import { AuthRequest } from "../middleware/authMiddleware";
 import crypto from 'crypto';
 import { sendEmail } from "../utils/sendEmail";
+import LeaveBalance from "../models/LeaveBalance";
 
 export const registerUser = async (
     req: Request,
@@ -36,6 +37,10 @@ export const registerUser = async (
             ...rest,
             password: hashedPassword,
             verificationToken,
+        });
+
+        await LeaveBalance.create({
+            employee: user._id,
         });
         const userResponse = user.toObject();
 
