@@ -3,13 +3,35 @@
 import dotenv from "dotenv";
 import connectDB from "./config/db";
 import app from "./app";
+import { seedAdmin } from "./seeds/adminSeed";
 
 dotenv.config();
 
-connectDB();
+// connectDB();
 
-const PORT = process.env.PORT || 5000;
+// const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// app.listen(PORT, () => {
+//   console.log(`Server running on port ${PORT}`);
+// });
+
+const startServer = async () => {
+  try {
+    await connectDB();
+
+    await seedAdmin();
+
+    const PORT = process.env.PORT || 5000;
+
+    app.listen(PORT, () => {
+      console.log(
+        `Server running on port ${PORT}`
+      );
+    });
+
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+startServer();

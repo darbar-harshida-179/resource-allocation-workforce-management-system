@@ -2,7 +2,7 @@
 
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
-import User from "../models/User";
+import User, { UserRole } from "../models/User";
 import jwt from "jsonwebtoken";
 import { AuthRequest } from "../middleware/authMiddleware";
 import crypto from 'crypto';
@@ -22,6 +22,13 @@ export const registerUser = async (
             res.status(400).json({
                 success: false,
                 message: "Email already exists",
+            });
+            return;
+        }
+        if (req.body.role === UserRole.ADMIN) {
+            res.status(403).json({
+                success: false,
+                message: "Admin registration not allowed",
             });
             return;
         }

@@ -9,7 +9,8 @@ import leaveRoutes from "./routes/leaveRoutes"
 import leaveBalanceRoutes from "./routes/leaveBalanceRoutes"
 import timesheetRoutes from "./routes/timesheetRoutes"
 import resourceAvailabilityRoutes from "./routes/resourceAvailabilityRoutes"
-
+import reportRoutes from "./routes/reportRoutes"
+import dashboardRoutes from "./routes/dashboardRoutes"
 const app = express();
 
 app.use(express.json());
@@ -26,5 +27,7 @@ app.use("/api/leaves", leaveRoutes);
 app.use("/api/leave-balances", leaveBalanceRoutes);
 app.use("/api/resource-availability", resourceAvailabilityRoutes);
 app.use("/api/timesheets", timesheetRoutes);
+app.use("/api/reports", reportRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 export default app;
