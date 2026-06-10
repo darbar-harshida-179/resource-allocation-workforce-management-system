@@ -1,21 +1,27 @@
 // backend/src/controllers/projectController.ts
 
 import { Request, Response } from "express";
+import { AuthRequest } from "../middleware/authMiddleware";
 import Project, { ProjectStatus } from "../models/Project";
 import Allocation from "../models/Allocation";
 
 export const createProject = async (
-    req: Request,
+    req: AuthRequest,
     res: Response
 ): Promise<void> => {
     try {
-        const project = await Project.create(req.body);
+        const project = await Project.create({
+            ...req.body,
+            createdBy: req.user?.id,
+        });
 
         res.status(201).json({
             success: true,
             data: project,
         });
-    } catch (error) {
+    } catch (error: any) {
+        console.log("Create Project Error:", error);
+
         res.status(500).json({
             success: false,
             message: "Failed to create project",
@@ -28,10 +34,15 @@ export const getProjects = async (
     res: Response
 ): Promise<void> => {
     try {
-        const projects = await Project.find().populate(
-            "manager",
-            "firstName lastName email"
-        );
+        const projects = await Project.find()
+            .populate(
+                "manager",
+                "firstName lastName email role"
+            )
+            .populate(
+                "createdBy",
+                "firstName lastName email role"
+            );
 
         res.status(200).json({
             success: true,
@@ -51,10 +62,15 @@ export const getProjectById = async (
     res: Response
 ): Promise<void> => {
     try {
-        const project = await Project.findById(req.params.id).populate(
-            "manager",
-            "firstName lastName email"
-        );
+        const project = await Project.findById(req.params.id)
+            .populate(
+                "manager",
+                "firstName lastName email role"
+            )
+            .populate(
+                "createdBy",
+                "firstName lastName email role"
+            );
 
         if (!project) {
             res.status(404).json({
@@ -143,39 +159,39 @@ export const closeProject = async (
 };
 
 export const getAssignedResources = async (
-  req: Request,
-  res: Response
+    req: Request,
+    res: Response
 ): Promise<void> => {
-  try {
-    const project = await Project.findById(req.params.id);
+    try {
+        const project = await Project.findById(req.params.id);
 
-    if (!project) {
-      res.status(404).json({
-        success: false,
-        message: "Project not found",
-      });
-      return;
+        if (!project) {
+            res.status(404).json({
+                success: false,
+                message: "Project not found",
+            });
+            return;
+        }
+
+        const allocations = await Allocation.find({
+            project: req.params.id,
+        }).populate(
+            "employee",
+            "firstName lastName email"
+        );
+
+        res.status(200).json({
+            success: true,
+            project: project.projectName,
+            count: allocations.length,
+            data: allocations,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch assigned resources",
+        });
     }
-
-    const allocations = await Allocation.find({
-      project: req.params.id,
-    }).populate(
-      "employee",
-      "firstName lastName email"
-    );
-
-    res.status(200).json({
-      success: true,
-      project: project.projectName,
-      count: allocations.length,
-      data: allocations,
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch assigned resources",
-    });
-  }
 };
 
 export const deleteProject = async (

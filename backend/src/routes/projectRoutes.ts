@@ -16,7 +16,7 @@ import { authorize } from "../middleware/roleMiddleware";
 
 const router = Router();
 
-router.post("/", protect, authorize("admin", "manager"), createProject);
+router.post("/", protect, authorize("admin"), createProject);
 
 router.put("/:id", protect, authorize("admin"), updateProject);
 

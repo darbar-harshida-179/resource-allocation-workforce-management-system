@@ -16,6 +16,7 @@ export interface IProject extends Document {
   endDate: Date;
   status: ProjectStatus;
   manager: mongoose.Types.ObjectId;
+  createdBy: mongoose.Types.ObjectId;
 }
 
 const projectSchema = new Schema<IProject>(
@@ -47,6 +48,11 @@ const projectSchema = new Schema<IProject>(
     },
 
     manager: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    createdBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
       required: true,
