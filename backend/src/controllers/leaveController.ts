@@ -10,7 +10,16 @@ export const applyLeave = async (
     res: Response
 ): Promise<void> => {
     try {
-        const leave = await Leave.create(req.body);
+
+        const { leaveType, startDate, endDate, reason, } = req.body;
+        
+        const leave = await Leave.create({
+            employee: (req as any).user.id,
+            leaveType,
+            startDate,
+            endDate,
+            reason,
+        });
 
         res.status(201).json({
             success: true,

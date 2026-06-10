@@ -9,11 +9,13 @@ export const submitTimesheet = async (
 ): Promise<void> => {
     try {
         const {
-            employee,
             project,
             date,
             hours,
         } = req.body;
+
+        const employee =
+            (req as any).user.id;
 
         const startOfDay = new Date(date);
         startOfDay.setHours(0, 0, 0, 0);

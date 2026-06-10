@@ -125,6 +125,27 @@ export const updateAllocation = async (
             });
             return;
         }
+
+        const startDate =
+            req.body.startDate ||
+            allocation.startDate;
+
+        const endDate =
+            req.body.endDate ||
+            allocation.endDate;
+
+        if (
+            new Date(endDate) <
+            new Date(startDate)
+        ) {
+            res.status(400).json({
+                success: false,
+                message:
+                    "End date cannot be before start date",
+            });
+            return;
+        }
+
         await AllocationHistory.create({
             employee: allocation.employee,
             project: allocation.project,
@@ -137,6 +158,7 @@ export const updateAllocation = async (
             success: true,
             data: allocation,
         });
+
     } catch (error) {
         res.status(500).json({
             success: false,
@@ -144,7 +166,6 @@ export const updateAllocation = async (
         });
     }
 };
-
 export const deleteAllocation = async (
     req: Request,
     res: Response
