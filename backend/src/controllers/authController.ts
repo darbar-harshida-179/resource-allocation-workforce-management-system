@@ -98,10 +98,10 @@ export const loginUser = async (
             return;
         }
 
-        if (!user.isVerified) {
+        if (!user.isVerified && user.role !== UserRole.ADMIN) {
             res.status(401).json({
                 success: false,
-                message: "Please verify your email first",
+                message: "Please verify your email before logging in.",
             });
             return;
         }
