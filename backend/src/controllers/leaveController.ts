@@ -99,18 +99,15 @@ export const approveLeave = async (
             return;
         }
 
-        const leaveBalance =
+        let leaveBalance =
             await LeaveBalance.findOne({
                 employee: leave.employee,
             });
 
         if (!leaveBalance) {
-            res.status(404).json({
-                success: false,
-                message:
-                    "Leave balance not found",
+            leaveBalance = await LeaveBalance.create({
+                employee: leave.employee,
             });
-            return;
         }
 
         const startDate = new Date(

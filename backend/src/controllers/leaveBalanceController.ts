@@ -47,7 +47,7 @@ export const getLeaveBalance = async (
     res: Response
 ): Promise<void> => {
     try {
-        const leaveBalance =
+        let leaveBalance =
             await LeaveBalance.findOne({
                 employee: req.params.employeeId,
             }).populate(
@@ -56,12 +56,13 @@ export const getLeaveBalance = async (
             );
 
         if (!leaveBalance) {
-            res.status(404).json({
-                success: false,
-                message:
-                    "Leave balance not found",
+            const newBalance = await LeaveBalance.create({
+                employee: req.params.employeeId as any,
             });
-            return;
+            leaveBalance = await LeaveBalance.findById(newBalance._id).populate(
+                "employee",
+                "firstName lastName email"
+            );
         }
 
         res.status(200).json({

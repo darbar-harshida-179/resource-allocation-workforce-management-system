@@ -3,13 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { toast } from 'react-toastify'
 import * as Yup from 'yup'
-import { IoEye, IoEyeOff, IoMailOutline, IoLockClosedOutline, IoPersonOutline, IoPeopleOutline } from 'react-icons/io5'
+import { IoEye, IoEyeOff, IoMailOutline, IoLockClosedOutline, IoPersonOutline, IoPeopleOutline, IoCheckmarkCircle } from 'react-icons/io5'
 import { useAuth } from '../../context/AuthContext'
 
 const SignUp = () => {
   const navigate = useNavigate()
   const auth = useAuth()
   const [showPassword, setShowPassword] = useState(false)
+  const [registered, setRegistered] = useState(false)
+  const [registeredEmail, setRegisteredEmail] = useState('')
 
   const formik = useFormik({
     initialValues: { firstName: '', lastName: '', email: '', password: '', role: 'employee' },
@@ -23,13 +25,15 @@ const SignUp = () => {
     onSubmit: async (values, { setSubmitting, resetForm }) => {
       try {
         await auth.register({
-          firstName: values.firstName, lastName: values.lastName,
-          email: values.email, password: values.password,
+          firstName: values.firstName,
+          lastName: values.lastName,
+          email: values.email,
+          password: values.password,
           role: values.role as 'manager' | 'employee',
         })
-        toast.success('Registration successful! Please check your email to verify.')
+        setRegisteredEmail(values.email)
+        setRegistered(true)
         resetForm()
-        navigate('/login')
       } catch (error: any) {
         toast.error(error?.response?.data?.message || 'Registration failed. Please try again.')
       } finally {
@@ -38,12 +42,43 @@ const SignUp = () => {
     },
   })
 
-  const inputClass = "w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+  const inputClass = 'w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'
+
+  // Show verification banner after successful registration
+  if (registered) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-md rounded-3xl bg-white p-8 shadow-2xl text-center sm:p-10">
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-100">
+            <IoCheckmarkCircle size={48} className="text-green-500" />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900">Verify Your Email</h2>
+          <p className="mt-3 text-sm text-slate-500">
+            We sent a verification link to
+          </p>
+          <p className="mt-1 text-sm font-semibold text-indigo-600">{registeredEmail}</p>
+          <p className="mt-3 text-sm text-slate-500">
+            Please check your inbox and click the verification link to activate your account. Once verified, you can log in.
+          </p>
+          <div className="mt-6 rounded-2xl bg-green-50 border border-green-200 px-4 py-3">
+            <p className="text-sm font-medium text-green-700">
+              ✓ Registration successful! Verify your email to login.
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/login')}
+            className="mt-6 w-full rounded-2xl bg-indigo-600 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex items-center justify-center px-4 py-8">
       <div className="w-full max-w-lg rounded-3xl bg-white/95 p-6 shadow-2xl backdrop-blur-xl sm:p-10">
-        {/* Header */}
         <div className="mb-8 text-center">
           <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-indigo-100">
             <IoPeopleOutline size={26} className="text-indigo-600" />
@@ -53,7 +88,6 @@ const SignUp = () => {
         </div>
 
         <form onSubmit={formik.handleSubmit} className="space-y-4">
-          {/* First & Last Name */}
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="mb-1.5 block text-sm font-medium text-slate-700">First Name</label>
@@ -77,7 +111,6 @@ const SignUp = () => {
             </div>
           </div>
 
-          {/* Email */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">Email</label>
             <div className="relative">
@@ -89,7 +122,6 @@ const SignUp = () => {
             {formik.touched.email && formik.errors.email && <p className="mt-1 text-xs text-red-500">{formik.errors.email}</p>}
           </div>
 
-          {/* Password */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">Password</label>
             <div className="relative">
@@ -97,21 +129,20 @@ const SignUp = () => {
               <input name="password" type={showPassword ? 'text' : 'password'} placeholder="Min. 6 characters"
                 value={formik.values.password} onChange={formik.handleChange} onBlur={formik.handleBlur}
                 className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-12 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100" />
-              <button type="button" onClick={() => setShowPassword((s) => !s)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 transition hover:text-slate-600">
+              <button type="button" onClick={() => setShowPassword(s => !s)}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
                 {showPassword ? <IoEyeOff size={17} /> : <IoEye size={17} />}
               </button>
             </div>
             {formik.touched.password && formik.errors.password && <p className="mt-1 text-xs text-red-500">{formik.errors.password}</p>}
           </div>
 
-          {/* Role */}
           <div>
             <label className="mb-1.5 block text-sm font-medium text-slate-700">Role</label>
             <div className="relative">
               <IoPeopleOutline className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
               <select name="role" value={formik.values.role} onChange={formik.handleChange} onBlur={formik.handleBlur}
-                className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-10 pr-4 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100">
+                className={inputClass}>
                 <option value="">Select role</option>
                 <option value="employee">Employee</option>
                 <option value="manager">Manager</option>

@@ -1,24 +1,74 @@
+import { useEffect, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import MainLayout from '../../components/layout/MainLayout'
 import { RadialBarChart, RadialBar, ResponsiveContainer } from 'recharts'
 import {
-  IoFolderOutline, IoTimeOutline, IoCalendarOutline, IoBarChartOutline,
+  IoFolderOutline, IoTimeOutline, IoCalendarOutline, IoBarChartOutline, IoReloadOutline,
 } from 'react-icons/io5'
+import { getEmployeeDashboard } from '../../services/dashboardService'
+import { getMyTimesheets } from '../../services/timesheetService'
 
 const statusColor = (s: string) =>
-  s === 'Approved' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-
-const radialData = [{ name: 'Utilization', value: 100, fill: '#6366f1' }]
+  s === 'approved' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
 
 const EmployeeDashboard = () => {
   const auth = useAuth()
+  const [dashData, setDashData] = useState<any>(null)
+  const [timesheets, setTimesheets] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const stats = [
-    { label: 'Current Projects', value: '2', sub: 'Active assignments', icon: <IoFolderOutline size={24} className="text-blue-500" />, bg: 'bg-blue-50' },
-    { label: "Today's Hours", value: '8h', sub: 'Logged today', icon: <IoTimeOutline size={24} className="text-indigo-500" />, bg: 'bg-indigo-50' },
-    { label: 'Leave Balance', value: '12', sub: 'Days remaining', icon: <IoCalendarOutline size={24} className="text-green-500" />, bg: 'bg-green-50' },
-    { label: 'Monthly Hours', value: '124h', sub: 'This month', icon: <IoBarChartOutline size={24} className="text-amber-500" />, bg: 'bg-amber-50' },
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [dashRes, tsRes] = await Promise.all([
+          getEmployeeDashboard(),
+          getMyTimesheets(),
+        ])
+        setDashData(dashRes.data)
+        setTimesheets((tsRes.data || []).slice(0, 5))
+      } catch (err) {
+        console.error('Employee dashboard error', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
+
+  const totalAllocation = dashData?.todaysTasks
+    ? dashData.todaysTasks.reduce((sum: number, t: any) => sum + (t.allocationPercentage || 0), 0)
+    : 0
+  const clampedAllocation = Math.min(totalAllocation, 100)
+  const radialData = [{ name: 'Utilization', value: clampedAllocation, fill: '#6366f1' }]
+
+  const leaveBalance = dashData?.leaveBalance
+  const totalLeaveRemaining = leaveBalance
+    ? (leaveBalance.casual || 0) + (leaveBalance.sick || 0) + (leaveBalance.earned || 0)
+    : 0
+
+  const todayStr = new Date().toDateString()
+  const loggedToday = timesheets
+    .filter((t: any) => new Date(t.date).toDateString() === todayStr)
+    .reduce((sum: number, t: any) => sum + (t.hours || 0), 0)
+
+  const statItems = [
+    { label: 'Current Projects', value: dashData?.currentProjects ?? 0, sub: 'Active assignments', icon: <IoFolderOutline size={24} className="text-blue-500" />, bg: 'bg-blue-50' },
+    { label: "Today's Hours", value: loggedToday + 'h', sub: 'Logged today', icon: <IoTimeOutline size={24} className="text-indigo-500" />, bg: 'bg-indigo-50' },
+    { label: 'Leave Balance', value: totalLeaveRemaining, sub: 'Days remaining', icon: <IoCalendarOutline size={24} className="text-green-500" />, bg: 'bg-green-50' },
+    { label: 'Monthly Hours', value: (dashData?.monthlyHours ?? 0) + 'h', sub: 'Approved hours', icon: <IoBarChartOutline size={24} className="text-amber-500" />, bg: 'bg-amber-50' },
   ]
+
+  const activeProjects: any[] = (dashData?.todaysTasks || []).filter((t: any) => t.project?.status !== 'completed')
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="flex h-64 items-center justify-center">
+          <IoReloadOutline className="animate-spin text-indigo-500" size={32} />
+        </div>
+      </MainLayout>
+    )
+  }
 
   return (
     <MainLayout>
@@ -30,11 +80,11 @@ const EmployeeDashboard = () => {
 
         {/* Stats */}
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-          {stats.map((s) => (
-            <div key={s.label} className="rounded-2xl bg-white p-5 shadow-sm">
+          {statItems.map((s) => (
+            <div key={s.label} className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-slate-500">{s.label}</p>
+                  <p className="text-xs text-slate-500 font-medium">{s.label}</p>
                   <p className="mt-1 text-2xl font-bold text-slate-900">{s.value}</p>
                   <p className="mt-1 text-xs text-slate-400">{s.sub}</p>
                 </div>
@@ -46,7 +96,7 @@ const EmployeeDashboard = () => {
 
         {/* Utilization Chart + Active Projects */}
         <div className="grid gap-6 lg:grid-cols-2">
-          <div className="rounded-2xl bg-white p-5 shadow-sm">
+          <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
             <h3 className="mb-2 text-base font-semibold text-slate-900">My Utilization</h3>
             <div className="flex flex-col items-center">
               <div className="relative h-48 w-48">
@@ -56,52 +106,54 @@ const EmployeeDashboard = () => {
                   </RadialBarChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <p className="text-2xl font-bold text-indigo-600">100%</p>
+                  <p className="text-2xl font-bold text-indigo-600">{clampedAllocation}%</p>
                   <p className="text-xs text-slate-500">Allocated</p>
                 </div>
               </div>
               <div className="mt-4 flex w-full justify-around border-t border-slate-100 pt-4">
                 <div className="text-center">
-                  <p className="text-lg font-bold text-slate-900">100%</p>
+                  <p className="text-lg font-bold text-slate-900">{clampedAllocation}%</p>
                   <p className="text-xs text-slate-500">Allocated</p>
                 </div>
                 <div className="h-10 w-px bg-slate-100" />
                 <div className="text-center">
-                  <p className="text-lg font-bold text-green-600">0%</p>
+                  <p className="text-lg font-bold text-green-600">{Math.max(0, 100 - clampedAllocation)}%</p>
                   <p className="text-xs text-slate-500">Available</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="rounded-2xl bg-white p-5 shadow-sm">
+          <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
             <h3 className="mb-4 text-base font-semibold text-slate-900">Active Projects</h3>
             <div className="space-y-4">
-              {[
-                { name: 'Project Alpha', dates: '2026-01-01 — 2026-08-31', progress: 60 },
-                { name: 'Project Beta', dates: '2026-02-01 — 2026-07-31', progress: 40 },
-              ].map((p, i) => (
-                <div key={i} className="rounded-xl border border-slate-100 p-4">
-                  <div className="mb-2 flex items-center justify-between">
-                    <h4 className="text-sm font-semibold text-slate-900">{p.name}</h4>
-                    <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">In Progress</span>
+              {activeProjects.length === 0 ? (
+                <p className="text-sm text-slate-400">No active projects assigned.</p>
+              ) : (
+                activeProjects.map((t: any, i: number) => (
+                  <div key={t._id || i} className="rounded-xl border border-slate-200 p-4">
+                    <div className="mb-2 flex items-center justify-between">
+                      <h4 className="text-sm font-semibold text-slate-900">{t.project?.projectName ?? 'Project'}</h4>
+                      <span className="rounded-full bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-700">
+                        {t.allocationPercentage}% allocated
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400">
+                      {t.startDate ? new Date(t.startDate).toLocaleDateString() : ''} — {t.endDate ? new Date(t.endDate).toLocaleDateString() : ''}
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-400">{p.dates}</p>
-                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-slate-100">
-                    <div className="h-full bg-indigo-600" style={{ width: `${p.progress}%` }} />
-                  </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         </div>
 
         {/* Recent Timesheets */}
-        <div className="rounded-2xl bg-white p-5 shadow-sm">
+        <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
           <h3 className="mb-4 text-base font-semibold text-slate-900">Recent Timesheets</h3>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[400px] text-sm">
-              <thead className="border-b border-slate-100">
+              <thead className="border-b border-slate-100 bg-slate-50">
                 <tr>
                   {['Date', 'Project', 'Hours', 'Status'].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500">{h}</th>
@@ -109,19 +161,20 @@ const EmployeeDashboard = () => {
                 </tr>
               </thead>
               <tbody>
-                {[
-                  { date: '2026-06-09', project: 'Project Alpha', hours: '5h', status: 'Pending' },
-                  { date: '2026-06-09', project: 'Project Beta', hours: '3h', status: 'Approved' },
-                ].map((r, i) => (
-                  <tr key={i} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="px-4 py-3 text-slate-600">{r.date}</td>
-                    <td className="px-4 py-3 text-slate-600">{r.project}</td>
-                    <td className="px-4 py-3 text-slate-600">{r.hours}</td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusColor(r.status)}`}>{r.status}</span>
-                    </td>
-                  </tr>
-                ))}
+                {timesheets.length === 0 ? (
+                  <tr><td colSpan={4} className="py-8 text-center text-sm text-slate-400">No timesheets submitted yet.</td></tr>
+                ) : (
+                  timesheets.map((r: any, i: number) => (
+                    <tr key={r._id || i} className="border-b border-slate-100 hover:bg-slate-50">
+                      <td className="px-4 py-3 text-slate-600">{new Date(r.date).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-slate-600">{r.project?.projectName ?? '—'}</td>
+                      <td className="px-4 py-3 text-slate-600">{r.hours}h</td>
+                      <td className="px-4 py-3">
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${statusColor(r.status)}`}>{r.status}</span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>

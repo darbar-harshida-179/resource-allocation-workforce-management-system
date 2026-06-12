@@ -1,144 +1,215 @@
+import { useEffect, useState } from 'react'
 import MainLayout from '../../components/layout/MainLayout'
 import {
-  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend,
+  PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer
 } from 'recharts'
 import {
   IoPeopleOutline, IoFolderOutline, IoTimeOutline, IoCalendarOutline,
-  IoDocumentTextOutline, IoCheckmarkCircleOutline, IoAddCircleOutline, IoAlertCircleOutline,
+  IoReloadOutline,
 } from 'react-icons/io5'
+import { getAdminDashboard } from '../../services/dashboardService'
+import { getProjects } from '../../services/projectService'
+import { getTimesheets } from '../../services/timesheetService'
+import { getAllEmployees } from '../../services/employeeService'
 
-const utilizationData = [
-  { month: 'Jan', value: 68 },
-  { month: 'Feb', value: 74 },
-  { month: 'Mar', value: 82 },
-  { month: 'Apr', value: 79 },
-  { month: 'May', value: 88 },
-  { month: 'Jun', value: 91 },
-]
+const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6', '#14b8a6', '#f43f5e']
 
-const deptData = [
-  { name: 'Engineering', value: 12 },
-  { name: 'Design', value: 5 },
-  { name: 'QA', value: 4 },
-  { name: 'Backend', value: 7 },
-  { name: 'Other', value: 3 },
-]
+const AdminDashboard = () => {
+  const [stats, setStats] = useState({
+    totalEmployees: 0,
+    activeProjects: 0,
+    resourcesAllocated: 0,
+    employeesOnLeave: 0,
+  })
+  const [projectStatusData, setProjectStatusData] = useState<{ name: string; value: number }[]>([])
+  const [departmentData, setDepartmentData] = useState<{ name: string; value: number }[]>([])
+  const [recentActivity, setRecentActivity] = useState<{ text: string; time: string }[]>([])
+  const [loading, setLoading] = useState(true)
 
-const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981']
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true)
+        const [dashRes, projRes, tsRes, empRes] = await Promise.all([
+          getAdminDashboard(),
+          getProjects(),
+          getTimesheets(),
+          getAllEmployees(),
+        ])
 
-const stats = [
-  { label: 'Total Employees', value: '31', sub: '+3 this month', icon: <IoPeopleOutline size={26} className="text-indigo-500" />, bg: 'bg-indigo-50' },
-  { label: 'Active Projects', value: '2', sub: '4 total', icon: <IoFolderOutline size={26} className="text-blue-500" />, bg: 'bg-blue-50' },
-  { label: 'Allocated Resources', value: '5', sub: '16% unallocated', icon: <IoTimeOutline size={26} className="text-amber-500" />, bg: 'bg-amber-50' },
-  { label: 'On Leave Today', value: '2', sub: 'Approved leaves', icon: <IoCalendarOutline size={26} className="text-green-500" />, bg: 'bg-green-50' },
-]
+        setStats({
+          totalEmployees: dashRes.data.totalEmployees,
+          activeProjects: dashRes.data.activeProjects,
+          resourcesAllocated: dashRes.data.resourcesAllocated,
+          employeesOnLeave: dashRes.data.employeesOnLeave,
+        })
 
-const projectStatus = [
-  { label: 'In Progress', count: 2, color: 'bg-blue-500' },
-  { label: 'Planning', count: 1, color: 'bg-purple-500' },
-  { label: 'Completed', count: 1, color: 'bg-green-500' },
-  { label: 'On Hold', count: 0, color: 'bg-red-500' },
-]
+        // Project status breakdown
+        const projects: any[] = projRes.data || []
+        const statusMap: Record<string, number> = {}
+        projects.forEach((p: any) => {
+          const label = p.status === 'in-progress' ? 'In Progress'
+            : p.status === 'planning' ? 'Planning'
+            : p.status === 'completed' ? 'Completed'
+            : 'On Hold'
+          statusMap[label] = (statusMap[label] || 0) + 1
+        })
 
-const activity = [
-  { text: 'Rohan Mehta submitted timesheet', time: '2h ago', icon: <IoDocumentTextOutline size={16} className="text-indigo-500" /> },
-  { text: "Ananya Patel's leave approved", time: '4h ago', icon: <IoCheckmarkCircleOutline size={16} className="text-green-500" /> },
-  { text: 'Project Delta allocation created', time: '6h ago', icon: <IoAddCircleOutline size={16} className="text-blue-500" /> },
-  { text: 'Vikram Singh applied for leave', time: '1d ago', icon: <IoCalendarOutline size={16} className="text-amber-500" /> },
-  { text: 'Project Gamma marked complete', time: '2d ago', icon: <IoCheckmarkCircleOutline size={16} className="text-green-500" /> },
-]
+        setProjectStatusData([
+          { name: 'In Progress', value: statusMap['In Progress'] || 0 },
+          { name: 'Planning', value: statusMap['Planning'] || 0 },
+          { name: 'Completed', value: statusMap['Completed'] || 0 },
+          { name: 'On Hold', value: statusMap['On Hold'] || 0 },
+        ].filter(item => item.value > 0))
 
-const AdminDashboard = () => (
-  <MainLayout>
-    <div className="space-y-6 px-4 py-6 sm:px-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Admin Dashboard</h1>
-        <p className="mt-1 text-sm text-slate-500">Organization overview — June 2026</p>
-      </div>
+        // Department distribution breakdown
+        const employees: any[] = empRes.data || []
+        const deptMap: Record<string, number> = {}
+        employees.forEach((e: any) => {
+          const dept = e.department || 'Unassigned'
+          deptMap[dept] = (deptMap[dept] || 0) + 1
+        })
+        const formattedDepts = Object.keys(deptMap).map(key => ({
+          name: key,
+          value: deptMap[key]
+        }))
+        setDepartmentData(formattedDepts)
 
-      {/* Stats */}
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        {stats.map((s) => (
-          <div key={s.label} className="rounded-2xl bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs text-slate-500">{s.label}</p>
-                <p className="mt-1 text-3xl font-bold text-slate-900">{s.value}</p>
-                <p className="mt-1 text-xs text-slate-400">{s.sub}</p>
-              </div>
-              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${s.bg}`}>
-                {s.icon}
+        // Recent activity from timesheets
+        const timesheets: any[] = tsRes.data || []
+        const activity = timesheets.slice(0, 5).map((ts: any) => ({
+          text: `${ts.employee?.firstName ?? ''} ${ts.employee?.lastName ?? ''} logged ${ts.hours}h on ${ts.project?.projectName ?? 'Project'}`,
+          time: new Date(ts.createdAt || ts.date).toLocaleDateString(),
+        }))
+        setRecentActivity(activity)
+      } catch (err) {
+        console.error('Dashboard load error', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+    fetchData()
+  }, [])
+
+  const statCards = [
+    { label: 'Total Employees', value: stats.totalEmployees, sub: 'All employees', icon: <IoPeopleOutline size={26} className="text-indigo-500" />, bg: 'bg-indigo-50' },
+    { label: 'Active Projects', value: stats.activeProjects, sub: 'In progress', icon: <IoFolderOutline size={26} className="text-blue-500" />, bg: 'bg-blue-50' },
+    { label: 'Allocated Resources', value: stats.resourcesAllocated, sub: 'Current allocations', icon: <IoTimeOutline size={26} className="text-amber-500" />, bg: 'bg-amber-50' },
+    { label: 'On Leave Today', value: stats.employeesOnLeave, sub: 'Approved leaves', icon: <IoCalendarOutline size={26} className="text-green-500" />, bg: 'bg-green-50' },
+  ]
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="flex h-64 items-center justify-center">
+          <IoReloadOutline className="animate-spin text-indigo-500" size={32} />
+        </div>
+      </MainLayout>
+    )
+  }
+
+  return (
+    <MainLayout>
+      <div className="space-y-6 px-4 py-6 sm:px-6">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Admin Dashboard</h1>
+          <p className="mt-1 text-sm text-slate-500">Organization overview — {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}</p>
+        </div>
+
+        {/* Stats */}
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          {statCards.map((s) => (
+            <div key={s.label} className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-slate-500 font-medium">{s.label}</p>
+                  <p className="mt-1 text-3xl font-bold text-slate-900">{s.value}</p>
+                  <p className="mt-1 text-xs text-slate-400">{s.sub}</p>
+                </div>
+                <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${s.bg}`}>
+                  {s.icon}
+                </div>
               </div>
             </div>
+          ))}
+        </div>
+
+        {/* Charts Section */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* Department Distribution */}
+          <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100 flex flex-col">
+            <h3 className="mb-4 text-base font-semibold text-slate-900">Department Distribution</h3>
+            <div className="h-64 w-full flex-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={departmentData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={4}
+                    dataKey="value"
+                  >
+                    {departmentData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => [`${value} Employee(s)`, 'Count']} />
+                  <Legend verticalAlign="bottom" height={36} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        ))}
-      </div>
 
-      {/* Charts */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Bar Chart */}
-        <div className="rounded-2xl bg-white p-5 shadow-sm">
-          <h3 className="mb-4 text-base font-semibold text-slate-900">Monthly Utilization Trend</h3>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={utilizationData} barSize={32}>
-              <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-              <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} unit="%" />
-              <Tooltip formatter={(v) => [`${v}%`, 'Utilization']} cursor={{ fill: '#f1f5f9' }} />
-              <Bar dataKey="value" fill="#6366f1" radius={[6, 6, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Pie Chart */}
-        <div className="rounded-2xl bg-white p-5 shadow-sm">
-          <h3 className="mb-4 text-base font-semibold text-slate-900">Department Distribution</h3>
-          <ResponsiveContainer width="100%" height={220}>
-            <PieChart>
-              <Pie data={deptData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={3} dataKey="value">
-                {deptData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
-              </Pie>
-              <Tooltip formatter={(v, n) => [v, n]} />
-              <Legend iconType="circle" iconSize={10} formatter={(v) => <span className="text-xs text-slate-600">{v}</span>} />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Project Status + Recent Activity */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="rounded-2xl bg-white p-5 shadow-sm">
-          <h3 className="mb-4 text-base font-semibold text-slate-900">Project Status</h3>
-          <div className="space-y-3">
-            {projectStatus.map((p) => (
-              <div key={p.label} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className={`h-2.5 w-2.5 rounded-full ${p.color}`} />
-                  <span className="text-sm text-slate-700">{p.label}</span>
-                </div>
-                <span className="text-sm font-semibold text-slate-900">{p.count}</span>
-              </div>
-            ))}
+          {/* Project Status */}
+          <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100 flex flex-col">
+            <h3 className="mb-4 text-base font-semibold text-slate-900">Project Status Breakdown</h3>
+            <div className="h-64 w-full flex-1">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={projectStatusData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={0}
+                    outerRadius={80}
+                    paddingAngle={0}
+                    dataKey="value"
+                    label={({ name, percent }) => `${name} ${((percent || 0) * 100).toFixed(0)}%`}
+                  >
+                    {projectStatusData.map((_, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[(index + 3) % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => [`${value} Project(s)`, 'Count']} />
+                  <Legend verticalAlign="bottom" height={36} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
         </div>
 
-        <div className="rounded-2xl bg-white p-5 shadow-sm">
-          <h3 className="mb-4 text-base font-semibold text-slate-900">Recent Activity</h3>
+        {/* Recent Activity */}
+        <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
+          <h3 className="mb-4 text-base font-semibold text-slate-900">Recent Timesheet Activity</h3>
           <div className="space-y-3">
-            {activity.map((a, i) => (
-              <div key={i} className="flex items-center justify-between border-b border-slate-100 pb-3 last:border-0">
-                <div className="flex items-center gap-2.5">
-                  <div className="shrink-0">{a.icon}</div>
+            {recentActivity.length === 0 ? (
+              <p className="text-sm text-slate-400">No recent activity yet.</p>
+            ) : (
+              recentActivity.map((a, i) => (
+                <div key={i} className="flex items-center justify-between border-b border-slate-100 pb-3 last:border-0">
                   <p className="text-sm text-slate-700">{a.text}</p>
+                  <p className="shrink-0 text-xs text-slate-400 ml-2">{a.time}</p>
                 </div>
-                <p className="shrink-0 text-xs text-slate-400 ml-2">{a.time}</p>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
-    </div>
-  </MainLayout>
-)
+    </MainLayout>
+  )
+}
 
 export default AdminDashboard
+

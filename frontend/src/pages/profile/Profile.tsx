@@ -4,6 +4,7 @@ import { toast } from 'react-toastify'
 import { useAuth } from '../../context/AuthContext'
 import MainLayout from '../../components/layout/MainLayout'
 import { IoPersonCircle, IoPersonOutline, IoMailOutline, IoBriefcaseOutline, IoCodeSlashOutline } from 'react-icons/io5'
+import { updateEmployee } from '../../services/employeeService'
 
 const DEPARTMENTS = ['Engineering', 'Design', 'QA', 'Backend', 'Frontend', 'DevOps', 'HR', 'Management']
 const ic = 'absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none'
@@ -14,7 +15,14 @@ const ProfilePage = () => {
   const initials = `${user?.firstName?.[0] ?? ''}${user?.lastName?.[0] ?? ''}`.toUpperCase()
 
   const formik = useFormik({
-    initialValues: { firstName: user?.firstName ?? '', lastName: user?.lastName ?? '', email: user?.email ?? '', department: 'Engineering', skills: 'React, Node.js, Python' },
+    enableReinitialize: true,
+    initialValues: {
+      firstName: user?.firstName ?? '',
+      lastName: user?.lastName ?? '',
+      email: user?.email ?? '',
+      department: user?.department ?? 'Engineering',
+      skills: user?.skills?.join(', ') ?? '',
+    },
     validationSchema: Yup.object({
       firstName: Yup.string().trim().required('First name is required'),
       lastName: Yup.string().trim().required('Last name is required'),
@@ -22,8 +30,22 @@ const ProfilePage = () => {
       department: Yup.string().required('Department is required'),
       skills: Yup.string().trim().required('Skills are required'),
     }),
-    onSubmit: (_, { setSubmitting }) => {
-      setTimeout(() => { toast.success('Profile updated successfully'); setSubmitting(false) }, 600)
+    onSubmit: async (values, { setSubmitting }) => {
+      try {
+        if (!user?._id) return
+        await updateEmployee(user._id, {
+          firstName: values.firstName,
+          lastName: values.lastName,
+          email: values.email,
+          department: values.department,
+          skills: values.skills.split(',').map((s: string) => s.trim()).filter(Boolean),
+        })
+        toast.success('Profile updated successfully')
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message || 'Failed to update profile')
+      } finally {
+        setSubmitting(false)
+      }
     },
   })
 
@@ -37,7 +59,7 @@ const ProfilePage = () => {
 
         <div className="grid gap-6 lg:grid-cols-2 lg:max-w-4xl">
           {/* Card 1 */}
-          <div className="flex flex-col items-center rounded-2xl bg-white p-6 shadow-md">
+          <div className="flex flex-col items-center rounded-2xl bg-white p-6 border border-slate-100 shadow-sm">
             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-indigo-600 text-xl font-bold text-white shadow-lg">
               {initials}
             </div>
@@ -48,21 +70,16 @@ const ProfilePage = () => {
             </div>
             <p className="mt-1 text-sm text-slate-500">{user?.email}</p>
             <div className="my-4 h-px w-full bg-slate-100" />
-            <div className="flex w-full justify-around">
-              <div className="text-center">
-                <p className="text-xl font-bold text-slate-900">2</p>
-                <p className="mt-0.5 text-xs text-slate-500">Projects</p>
-              </div>
-              <div className="h-8 w-px bg-slate-100" />
-              <div className="text-center">
-                <p className="text-xl font-bold text-indigo-600">100%</p>
-                <p className="mt-0.5 text-xs text-slate-500">Utilization</p>
+            <div className="flex w-full justify-around text-center">
+              <div>
+                <p className="text-xl font-bold text-slate-950">{user?.department || 'Not Assigned'}</p>
+                <p className="mt-0.5 text-xs text-slate-500">Department</p>
               </div>
             </div>
           </div>
 
           {/* Card 2 */}
-          <div className="rounded-2xl bg-white p-5 shadow-md">
+          <div className="rounded-2xl bg-white p-5 border border-slate-100 shadow-sm">
             <h3 className="mb-4 text-base font-semibold text-slate-900">Personal Information</h3>
             <form onSubmit={formik.handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-3">

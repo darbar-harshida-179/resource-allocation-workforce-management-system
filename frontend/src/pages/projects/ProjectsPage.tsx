@@ -1,30 +1,44 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import { toast } from 'react-toastify'
 import MainLayout from '../../components/layout/MainLayout'
-import { IoPencil, IoTrash, IoClose, IoFolderOpen, IoWarningOutline } from 'react-icons/io5'
+import { IoPencil, IoTrash, IoClose, IoFolderOpen, IoWarningOutline, IoReloadOutline } from 'react-icons/io5'
 import { useAuth } from '../../context/AuthContext'
+import { getProjects, createProject, updateProject, deleteProject as deleteProjectApi } from '../../services/projectService'
 
 interface Project {
-  id: number
-  name: string
+  _id: string
+  projectName: string
   description: string
   status: string
   startDate: string
   endDate: string
-  progress: number
-  resources: number
+  resourcesCount?: number
+  manager?: {
+    _id: string
+    firstName: string
+    lastName: string
+  }
 }
 
-const STATUS_OPTIONS = ['Planning', 'In Progress', 'On Hold', 'Completed']
+const STATUS_OPTIONS = ['planning', 'in-progress', 'on-hold', 'completed']
 
 const statusColor = (status: string) => {
   switch (status) {
-    case 'In Progress': return 'bg-blue-100 text-blue-700'
-    case 'Completed': return 'bg-green-100 text-green-700'
-    case 'On Hold': return 'bg-red-100 text-red-700'
+    case 'in-progress': return 'bg-blue-100 text-blue-700'
+    case 'completed': return 'bg-green-100 text-green-700'
+    case 'on-hold': return 'bg-red-100 text-red-700'
     default: return 'bg-purple-100 text-purple-700'
+  }
+}
+
+const statusLabel = (status: string) => {
+  switch (status) {
+    case 'in-progress': return 'In Progress'
+    case 'completed': return 'Completed'
+    case 'on-hold': return 'On Hold'
+    default: return 'Planning'
   }
 }
 
@@ -93,7 +107,7 @@ const formFields = (formik: any) => (
         className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
       >
         <option value="">Select status</option>
-        {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{s}</option>)}
+        {STATUS_OPTIONS.map((s) => <option key={s} value={s}>{statusLabel(s)}</option>)}
       </select>
       {formik.touched.status && formik.errors.status && <p className="mt-1 text-xs text-red-500">{formik.errors.status}</p>}
     </div>
@@ -114,49 +128,34 @@ const validationSchema = Yup.object({
 })
 
 // ── Employee read-only view ──
-const EmployeeProjectsView = () => {
-  const myProjects = [
-    { id: 1, name: 'Project Alpha', description: 'E-commerce platform rebuild', status: 'In Progress', startDate: '2026-01-01', endDate: '2026-08-31', allocation: 60, progress: 60 },
-    { id: 2, name: 'Project Beta', description: 'Internal HR portal', status: 'In Progress', startDate: '2026-02-01', endDate: '2026-07-31', allocation: 40, progress: 40 },
-  ]
-
+const EmployeeProjectsView = ({ projects }: { projects: Project[] }) => {
   return (
     <div className="space-y-6 px-4 py-6 sm:px-6">
       <div>
         <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">My Projects</h1>
-        <p className="mt-1 text-sm text-slate-500">You are assigned to {myProjects.length} projects</p>
+        <p className="mt-1 text-sm text-slate-500">You are assigned to {projects.length} projects</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {myProjects.map((project) => (
-          <div key={project.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        {projects.map((project) => (
+          <div key={project._id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-3">
-              <h3 className="font-semibold text-slate-900">{project.name}</h3>
+              <h3 className="font-semibold text-slate-900">{project.projectName}</h3>
               <p className="mt-1 text-sm text-slate-500">{project.description}</p>
             </div>
 
             <span className={`inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${statusColor(project.status)}`}>
-              {project.status}
+              {statusLabel(project.status)}
             </span>
 
-            <div className="mt-3">
-              <p className="text-xs text-slate-500">My Allocation</p>
-              <p className="mt-1 text-xl font-bold text-indigo-600">{project.allocation}%</p>
-            </div>
-
-            <div className="mt-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-medium text-slate-600">Progress</p>
-                <p className="text-xs font-semibold text-slate-900">{project.progress}%</p>
-              </div>
-              <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
-                <div className="h-full bg-indigo-600 transition-all" style={{ width: `${project.progress}%` }} />
-              </div>
-            </div>
-
-            <p className="mt-3 text-xs text-slate-400">{project.startDate} → {project.endDate}</p>
+            <p className="mt-3 text-xs text-slate-400">
+              {new Date(project.startDate).toLocaleDateString()} → {new Date(project.endDate).toLocaleDateString()}
+            </p>
           </div>
         ))}
+        {projects.length === 0 && (
+          <p className="text-sm text-slate-400 col-span-full">No projects found.</p>
+        )}
       </div>
     </div>
   )
@@ -168,31 +167,45 @@ const ProjectsPage = () => {
   const [showAddModal, setShowAddModal] = useState(false)
   const [editProject, setEditProject] = useState<Project | null>(null)
   const [deleteProject, setDeleteProject] = useState<Project | null>(null)
+  const [projects, setProjects] = useState<Project[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const [projects, setProjects] = useState<Project[]>([
-    { id: 1, name: 'Project Alpha', description: 'E-commerce platform rebuild', status: 'In Progress', startDate: '2026-01-01', endDate: '2026-08-31', progress: 60, resources: 2 },
-    { id: 2, name: 'Project Beta', description: 'Internal HR portal', status: 'In Progress', startDate: '2026-02-01', endDate: '2026-07-31', progress: 40, resources: 2 },
-    { id: 3, name: 'Project Gamma', description: 'Mobile app development', status: 'Completed', startDate: '2025-10-01', endDate: '2026-03-31', progress: 100, resources: 0 },
-    { id: 4, name: 'Project Delta', description: 'Data analytics dashboard', status: 'Planning', startDate: '2026-04-01', endDate: '2026-12-31', progress: 0, resources: 1 },
-  ])
+  const fetchProjectsList = async () => {
+    try {
+      setLoading(true)
+      const res = await getProjects()
+      setProjects(res.data || [])
+    } catch {
+      toast.error('Failed to fetch projects')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchProjectsList()
+  }, [])
 
   // ── Add formik ──
   const addFormik = useFormik({
     initialValues: { name: '', description: '', startDate: '', endDate: '', status: '' },
     validationSchema,
-    onSubmit: (values, { resetForm }) => {
-      setProjects((prev) => [...prev, {
-        id: Date.now(),
-        name: values.name,
-        description: values.description,
-        status: values.status,
-        startDate: values.startDate,
-        endDate: values.endDate,
-        progress: values.status === 'Completed' ? 100 : values.status === 'Planning' ? 0 : 10,
-        resources: 0,
-      }])
-      resetForm()
-      setShowAddModal(false)
+    onSubmit: async (values, { resetForm }) => {
+      try {
+        await createProject({
+          projectName: values.name,
+          description: values.description,
+          startDate: values.startDate,
+          endDate: values.endDate,
+          status: values.status,
+        })
+        toast.success('Project created successfully')
+        resetForm()
+        setShowAddModal(false)
+        fetchProjectsList()
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message || 'Failed to create project')
+      }
     },
   })
 
@@ -200,36 +213,56 @@ const ProjectsPage = () => {
   const editFormik = useFormik({
     enableReinitialize: true,
     initialValues: {
-      name: editProject?.name ?? '',
+      name: editProject?.projectName ?? '',
       description: editProject?.description ?? '',
-      startDate: editProject?.startDate ?? '',
-      endDate: editProject?.endDate ?? '',
+      startDate: editProject?.startDate ? new Date(editProject.startDate).toISOString().split('T')[0] : '',
+      endDate: editProject?.endDate ? new Date(editProject.endDate).toISOString().split('T')[0] : '',
       status: editProject?.status ?? '',
     },
     validationSchema,
-    onSubmit: (values, { resetForm }) => {
-      setProjects((prev) =>
-        prev.map((p) =>
-          p.id === editProject!.id
-            ? { ...p, ...values, progress: values.status === 'Completed' ? 100 : values.status === 'Planning' ? 0 : p.progress }
-            : p
-        )
-      )
-      toast.success('Project updated successfully')
-      resetForm()
-      setEditProject(null)
+    onSubmit: async (values, { resetForm }) => {
+      try {
+        await updateProject(editProject!._id, {
+          projectName: values.name,
+          description: values.description,
+          startDate: values.startDate,
+          endDate: values.endDate,
+          status: values.status,
+        })
+        toast.success('Project updated successfully')
+        resetForm()
+        setEditProject(null)
+        fetchProjectsList()
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message || 'Failed to update project')
+      }
     },
   })
 
   // ── Delete handler ──
-  const handleDelete = () => {
-    setProjects((prev) => prev.filter((p) => p.id !== deleteProject!.id))
-    toast.success('Project deleted successfully')
-    setDeleteProject(null)
+  const handleDelete = async () => {
+    try {
+      await deleteProjectApi(deleteProject!._id)
+      toast.success('Project deleted successfully')
+      setDeleteProject(null)
+      fetchProjectsList()
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to delete project')
+    }
+  }
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="flex h-64 items-center justify-center">
+          <IoReloadOutline className="animate-spin text-indigo-500" size={32} />
+        </div>
+      </MainLayout>
+    )
   }
 
   if (user?.role === 'employee') {
-    return <MainLayout><EmployeeProjectsView /></MainLayout>
+    return <MainLayout><EmployeeProjectsView projects={projects} /></MainLayout>
   }
 
   return (
@@ -253,10 +286,10 @@ const ProjectsPage = () => {
         {/* Projects Grid */}
         <div className="grid gap-5 sm:grid-cols-2">
           {projects.map((project) => (
-            <div key={project.id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
+            <div key={project._id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
               <div className="mb-4 flex items-start justify-between">
                 <div className="flex-1 pr-2">
-                  <h3 className="font-semibold text-slate-900">{project.name}</h3>
+                  <h3 className="font-semibold text-slate-900">{project.projectName}</h3>
                   <p className="mt-1 text-sm text-slate-500">{project.description}</p>
                 </div>
                 <div className="flex gap-1">
@@ -275,32 +308,31 @@ const ProjectsPage = () => {
                 </div>
               </div>
 
-              <div className="mb-4 flex flex-wrap gap-3">
+              <div className="mb-4 flex flex-wrap gap-6">
                 <div>
-                  <p className="text-xs text-slate-500">Status</p>
+                  <p className="text-xs text-slate-500 font-medium">Status</p>
                   <span className={`mt-1 inline-block rounded-full px-2.5 py-1 text-xs font-semibold ${statusColor(project.status)}`}>
-                    {project.status}
+                    {statusLabel(project.status)}
                   </span>
                 </div>
-                <div>
-                  <p className="text-xs text-slate-500">Resources</p>
-                  <p className="mt-1 text-sm font-semibold text-slate-900">{project.resources}</p>
-                </div>
+                {project.manager && (
+                  <div>
+                    <p className="text-xs text-slate-500 font-medium">Manager</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-900">
+                      {project.manager.firstName} {project.manager.lastName}
+                    </p>
+                  </div>
+                )}
               </div>
 
-              <div className="mb-3">
-                <div className="flex items-center justify-between">
-                  <p className="text-xs font-medium text-slate-600">Progress</p>
-                  <p className="text-xs font-semibold text-slate-900">{project.progress}%</p>
-                </div>
-                <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
-                  <div className="h-full bg-indigo-600 transition-all" style={{ width: `${project.progress}%` }} />
-                </div>
-              </div>
-
-              <p className="text-xs text-slate-400">{project.startDate} — {project.endDate}</p>
+              <p className="text-xs text-slate-400">
+                {new Date(project.startDate).toLocaleDateString()} — {new Date(project.endDate).toLocaleDateString()}
+              </p>
             </div>
           ))}
+          {projects.length === 0 && (
+            <p className="text-sm text-slate-400 col-span-full">No projects created yet.</p>
+          )}
         </div>
       </div>
 
@@ -378,7 +410,7 @@ const ProjectsPage = () => {
               </div>
               <h2 className="mt-4 text-lg font-semibold text-slate-900">Delete Project</h2>
               <p className="mt-2 text-sm text-slate-500">
-                Are you sure you want to delete <span className="font-semibold text-slate-800">"{deleteProject.name}"</span>? This action cannot be undone.
+                Are you sure you want to delete <span className="font-semibold text-slate-800">"{deleteProject.projectName}"</span>? This action cannot be undone.
               </p>
             </div>
             <div className="mt-6 flex gap-3">

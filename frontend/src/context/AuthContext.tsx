@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
-import { loginUser, registerUser } from '../services/authService'
+import { loginUser, registerUser, logoutUser } from '../services/authService'
 import type {
   AuthContextType,
   AuthUser,
@@ -11,6 +11,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 const AUTH_USER_KEY = 'resource-allocation-auth-user'
 const AUTH_TOKEN_KEY = 'resource-allocation-auth-token'
+const AUTH_REFRESH_KEY = 'resource-allocation-refresh-token'
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<AuthUser | null>(null)
@@ -42,6 +43,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     setAccessToken(response.accessToken)
     localStorage.setItem(AUTH_USER_KEY, JSON.stringify(response.data))
     localStorage.setItem(AUTH_TOKEN_KEY, response.accessToken)
+    localStorage.setItem(AUTH_REFRESH_KEY, response.refreshToken)
     return response.data
   }
 
@@ -49,11 +51,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     await registerUser(payload)
   }
 
-  const logout = () => {
-    setUser(null)
-    setAccessToken(null)
-    localStorage.removeItem(AUTH_USER_KEY)
-    localStorage.removeItem(AUTH_TOKEN_KEY)
+  const logout = async () => {
+    try {
+      const refreshToken = localStorage.getItem(AUTH_REFRESH_KEY)
+      if (refreshToken) {
+        await logoutUser(refreshToken)
+      }
+    } catch {
+      // Silently ignore logout API errors
+    } finally {
+      setUser(null)
+      setAccessToken(null)
+      localStorage.removeItem(AUTH_USER_KEY)
+      localStorage.removeItem(AUTH_TOKEN_KEY)
+      localStorage.removeItem(AUTH_REFRESH_KEY)
+    }
   }
 
   const value = useMemo(

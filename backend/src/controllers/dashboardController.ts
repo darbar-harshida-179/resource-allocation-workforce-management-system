@@ -149,10 +149,17 @@ export const getEmployeeDashboard = async (
                 ? monthlyHours[0].totalHours
                 : 0;
 
-        const leaveBalance =
+        let leaveBalance =
             await LeaveBalance.findOne({
                 employee: employeeId,
             });
+
+        if (!leaveBalance) {
+            leaveBalance = await LeaveBalance.create({
+                employee: employeeId,
+            });
+        }
+
 
         res.status(200).json({
             success: true,

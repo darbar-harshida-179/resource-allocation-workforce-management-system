@@ -21,7 +21,22 @@ export const forgotPassword = async (payload: { email: string }) => {
   return response.data
 }
 
+export const resetPassword = async (token: string, password: string) => {
+  const response = await api.post(`/auth/reset-password/${token}`, { password })
+  return response.data
+}
+
 export const verifyEmail = async (token: string) => {
   const response = await api.get(`/auth/verify-email/${token}`)
+  return response.data
+}
+
+export const logoutUser = async (refreshToken: string) => {
+  const response = await api.post('/auth/logout', { refreshToken })
+  return response.data
+}
+
+export const getProfile = async () => {
+  const response = await api.get('/auth/profile')
   return response.data
 }

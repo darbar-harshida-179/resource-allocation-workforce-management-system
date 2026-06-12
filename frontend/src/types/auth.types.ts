@@ -7,6 +7,8 @@ export interface AuthUser {
   email: string
   role: UserRole
   isVerified: boolean
+  department?: string
+  skills?: string[]
 }
 
 export interface LoginRequest {

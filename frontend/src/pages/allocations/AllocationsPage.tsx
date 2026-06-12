@@ -1,17 +1,33 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useFormik } from 'formik'
 import * as Yup from 'yup'
 import { toast } from 'react-toastify'
 import MainLayout from '../../components/layout/MainLayout'
 import {
   IoPencil, IoTrash, IoClose, IoLayersOutline, IoWarningOutline,
-  IoPersonOutline, IoFolderOutline, IoCalendarOutline, IoStatsChartOutline,
+  IoPersonOutline, IoFolderOutline, IoCalendarOutline, IoStatsChartOutline, IoReloadOutline,
 } from 'react-icons/io5'
+import { getAllocations, createAllocation, updateAllocation, deleteAllocation } from '../../services/allocationService'
+import { getAllEmployees } from '../../services/employeeService'
+import { getProjects } from '../../services/projectService'
 
-interface Allocation { id: number; employee: string; project: string; allocation: number; startDate: string; endDate: string }
+interface Allocation {
+  _id: string
+  employee?: {
+    _id: string
+    firstName: string
+    lastName: string
+    department?: string
+  }
+  project?: {
+    _id: string
+    projectName: string
+  }
+  allocationPercentage: number
+  startDate: string
+  endDate: string
+}
 
-const EMPLOYEE_OPTIONS = ['Rohan Mehta', 'Ananya Patel', 'Vikram Singh', 'Neha Gupta', 'Arjun Nair']
-const PROJECT_OPTIONS = ['Project Alpha', 'Project Beta', 'Project Gamma', 'Project Delta']
 const getBarColor = (p: number) => p === 100 ? 'bg-red-500' : p >= 60 ? 'bg-amber-500' : 'bg-green-500'
 
 const schema = Yup.object({
@@ -25,7 +41,7 @@ const schema = Yup.object({
 const ic = 'absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none'
 const inp = 'w-full rounded-xl border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100'
 
-const ModalForm = ({ formik, submitLabel, onCancel }: { formik: any; submitLabel: string; onCancel: () => void }) => (
+const ModalForm = ({ formik, submitLabel, onCancel, employees, projects }: { formik: any; submitLabel: string; onCancel: () => void; employees: any[]; projects: any[] }) => (
   <form onSubmit={formik.handleSubmit} className="space-y-4 px-6 py-5">
     <div>
       <label className="mb-1.5 block text-sm font-medium text-slate-700">Employee</label>
@@ -33,7 +49,7 @@ const ModalForm = ({ formik, submitLabel, onCancel }: { formik: any; submitLabel
         <IoPersonOutline className={ic} size={16} />
         <select name="employee" value={formik.values.employee} onChange={formik.handleChange} onBlur={formik.handleBlur} className={inp}>
           <option value="">Select employee</option>
-          {EMPLOYEE_OPTIONS.map(e => <option key={e} value={e}>{e}</option>)}
+          {employees.map(e => <option key={e._id} value={e._id}>{e.firstName} {e.lastName}</option>)}
         </select>
       </div>
       {formik.touched.employee && formik.errors.employee && <p className="mt-1 text-xs text-red-500">{formik.errors.employee}</p>}
@@ -44,7 +60,7 @@ const ModalForm = ({ formik, submitLabel, onCancel }: { formik: any; submitLabel
         <IoFolderOutline className={ic} size={16} />
         <select name="project" value={formik.values.project} onChange={formik.handleChange} onBlur={formik.handleBlur} className={inp}>
           <option value="">Select project</option>
-          {PROJECT_OPTIONS.map(p => <option key={p} value={p}>{p}</option>)}
+          {projects.map(p => <option key={p._id} value={p._id}>{p.projectName}</option>)}
         </select>
       </div>
       {formik.touched.project && formik.errors.project && <p className="mt-1 text-xs text-red-500">{formik.errors.project}</p>}
@@ -89,36 +105,125 @@ const AllocationsPage = () => {
   const [showAdd, setShowAdd] = useState(false)
   const [editAlloc, setEditAlloc] = useState<Allocation | null>(null)
   const [deleteAlloc, setDeleteAlloc] = useState<Allocation | null>(null)
-  const [allocations, setAllocations] = useState<Allocation[]>([
-    { id: 1, employee: 'Rohan Mehta', project: 'Project Alpha', allocation: 60, startDate: '2026-01-01', endDate: '2026-08-31' },
-    { id: 2, employee: 'Rohan Mehta', project: 'Project Beta', allocation: 40, startDate: '2026-02-01', endDate: '2026-07-31' },
-    { id: 3, employee: 'Ananya Patel', project: 'Project Alpha', allocation: 80, startDate: '2026-01-01', endDate: '2026-08-31' },
-    { id: 4, employee: 'Vikram Singh', project: 'Project Delta', allocation: 50, startDate: '2026-04-01', endDate: '2026-12-31' },
-    { id: 5, employee: 'Arjun Nair', project: 'Project Beta', allocation: 100, startDate: '2026-02-01', endDate: '2026-07-31' },
-  ])
+  const [allocations, setAllocations] = useState<Allocation[]>([])
+  const [employees, setEmployees] = useState<any[]>([])
+  const [projects, setProjects] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const utilizationMap: Record<string, number> = {}
-  allocations.forEach(({ employee, allocation }) => { utilizationMap[employee] = (utilizationMap[employee] || 0) + allocation })
-  const utilizationList = EMPLOYEE_OPTIONS.map(name => ({ name, utilization: Math.min(utilizationMap[name] || 0, 100) }))
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      const [allocRes, empRes, projRes] = await Promise.all([
+        getAllocations(),
+        getAllEmployees(),
+        getProjects(),
+      ])
+      setAllocations(allocRes.data || [])
+      setEmployees(empRes.data || [])
+      setProjects(projRes.data || [])
+    } catch {
+      toast.error('Failed to load allocations data')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  // Calculate dynamic utilization summaries per employee
+  const utilizationMap: Record<string, { name: string; utilization: number }> = {}
+  
+  // Initialize map with all employees
+  employees.forEach(emp => {
+    const fullName = `${emp.firstName} ${emp.lastName}`
+    utilizationMap[emp._id] = { name: fullName, utilization: 0 }
+  })
+  
+  // Aggregate allocations
+  allocations.forEach(alloc => {
+    if (alloc.employee?._id && utilizationMap[alloc.employee._id]) {
+      utilizationMap[alloc.employee._id].utilization += alloc.allocationPercentage
+    }
+  })
+
+  const utilizationList = Object.values(utilizationMap).map(item => ({
+    name: item.name,
+    utilization: Math.min(item.utilization, 100),
+  }))
 
   const addFormik = useFormik({
     initialValues: { employee: '', project: '', allocationPercentage: '', startDate: '', endDate: '' },
     validationSchema: schema,
-    onSubmit: (values, { resetForm }) => {
-      setAllocations(prev => [...prev, { id: Date.now(), employee: values.employee, project: values.project, allocation: Number(values.allocationPercentage), startDate: values.startDate, endDate: values.endDate }])
-      resetForm(); setShowAdd(false)
+    onSubmit: async (values, { resetForm }) => {
+      try {
+        await createAllocation({
+          employee: values.employee,
+          project: values.project,
+          allocationPercentage: Number(values.allocationPercentage),
+          startDate: values.startDate,
+          endDate: values.endDate,
+        })
+        toast.success('Allocation created successfully')
+        resetForm()
+        setShowAdd(false)
+        fetchData()
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message || 'Failed to create allocation')
+      }
     },
   })
 
   const editFormik = useFormik({
     enableReinitialize: true,
-    initialValues: { employee: editAlloc?.employee ?? '', project: editAlloc?.project ?? '', allocationPercentage: editAlloc?.allocation?.toString() ?? '', startDate: editAlloc?.startDate ?? '', endDate: editAlloc?.endDate ?? '' },
+    initialValues: {
+      employee: editAlloc?.employee?._id ?? '',
+      project: editAlloc?.project?._id ?? '',
+      allocationPercentage: editAlloc?.allocationPercentage?.toString() ?? '',
+      startDate: editAlloc?.startDate ? new Date(editAlloc.startDate).toISOString().split('T')[0] : '',
+      endDate: editAlloc?.endDate ? new Date(editAlloc.endDate).toISOString().split('T')[0] : '',
+    },
     validationSchema: schema,
-    onSubmit: (values, { resetForm }) => {
-      setAllocations(prev => prev.map(a => a.id === editAlloc!.id ? { ...a, employee: values.employee, project: values.project, allocation: Number(values.allocationPercentage), startDate: values.startDate, endDate: values.endDate } : a))
-      toast.success('Allocation updated successfully'); resetForm(); setEditAlloc(null)
+    onSubmit: async (values, { resetForm }) => {
+      try {
+        await updateAllocation(editAlloc!._id, {
+          employee: values.employee,
+          project: values.project,
+          allocationPercentage: Number(values.allocationPercentage),
+          startDate: values.startDate,
+          endDate: values.endDate,
+        })
+        toast.success('Allocation updated successfully')
+        resetForm()
+        setEditAlloc(null)
+        fetchData()
+      } catch (err: any) {
+        toast.error(err?.response?.data?.message || 'Failed to update allocation')
+      }
     },
   })
+
+  const handleDelete = async () => {
+    try {
+      await deleteAllocation(deleteAlloc!._id)
+      toast.success('Allocation deleted successfully')
+      setDeleteAlloc(null)
+      fetchData()
+    } catch (err: any) {
+      toast.error(err?.response?.data?.message || 'Failed to delete allocation')
+    }
+  }
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="flex h-64 items-center justify-center">
+          <IoReloadOutline className="animate-spin text-indigo-500" size={32} />
+        </div>
+      </MainLayout>
+    )
+  }
 
   return (
     <MainLayout>
@@ -146,6 +251,9 @@ const AllocationsPage = () => {
                 <p className="mt-1 text-right text-xs font-semibold text-slate-700">{emp.utilization}%</p>
               </div>
             ))}
+            {utilizationList.length === 0 && (
+              <p className="text-xs text-slate-400">No employee utilization data.</p>
+            )}
           </div>
         </div>
 
@@ -158,18 +266,24 @@ const AllocationsPage = () => {
               </thead>
               <tbody>
                 {allocations.map(a => (
-                  <tr key={a.id} className="border-b border-slate-100 hover:bg-slate-50">
-                    <td className="px-4 py-3 font-medium text-slate-900 sm:px-6">{a.employee}</td>
-                    <td className="px-4 py-3 font-medium text-indigo-600 sm:px-6">{a.project}</td>
+                  <tr key={a._id} className="border-b border-slate-100 hover:bg-slate-50">
+                    <td className="px-4 py-3 font-medium text-slate-900 sm:px-6">
+                      {a.employee ? `${a.employee.firstName} ${a.employee.lastName}` : 'Unassigned'}
+                    </td>
+                    <td className="px-4 py-3 font-medium text-indigo-600 sm:px-6">
+                      {a.project ? a.project.projectName : 'Unknown Project'}
+                    </td>
                     <td className="px-4 py-3 sm:px-6">
                       <div className="flex items-center gap-2">
                         <div className="h-1.5 w-20 overflow-hidden rounded-full bg-slate-200">
-                          <div className={`h-full ${getBarColor(a.allocation)}`} style={{ width: `${a.allocation}%` }} />
+                          <div className={`h-full ${getBarColor(a.allocationPercentage)}`} style={{ width: `${a.allocationPercentage}%` }} />
                         </div>
-                        <span className="text-sm font-semibold text-slate-900">{a.allocation}%</span>
+                        <span className="text-sm font-semibold text-slate-900">{a.allocationPercentage}%</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-xs text-slate-500 sm:px-6">{a.startDate} — {a.endDate}</td>
+                    <td className="px-4 py-3 text-xs text-slate-500 sm:px-6">
+                      {new Date(a.startDate).toLocaleDateString()} — {new Date(a.endDate).toLocaleDateString()}
+                    </td>
                     <td className="px-4 py-3 sm:px-6">
                       <div className="flex gap-1">
                         <button onClick={() => setEditAlloc(a)} className="rounded-lg p-1.5 text-green-600 hover:bg-green-50"><IoPencil size={15} /></button>
@@ -196,7 +310,7 @@ const AllocationsPage = () => {
               </div>
               <button onClick={() => { addFormik.resetForm(); setShowAdd(false) }} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><IoClose size={20} /></button>
             </div>
-            <ModalForm formik={addFormik} submitLabel="Create Allocation" onCancel={() => { addFormik.resetForm(); setShowAdd(false) }} />
+            <ModalForm formik={addFormik} submitLabel="Create Allocation" onCancel={() => { addFormik.resetForm(); setShowAdd(false) }} employees={employees} projects={projects} />
           </div>
         </div>
       )}
@@ -212,7 +326,7 @@ const AllocationsPage = () => {
               </div>
               <button onClick={() => setEditAlloc(null)} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><IoClose size={20} /></button>
             </div>
-            <ModalForm formik={editFormik} submitLabel="Save Changes" onCancel={() => setEditAlloc(null)} />
+            <ModalForm formik={editFormik} submitLabel="Save Changes" onCancel={() => setEditAlloc(null)} employees={employees} projects={projects} />
           </div>
         </div>
       )}
@@ -224,11 +338,13 @@ const AllocationsPage = () => {
             <div className="flex flex-col items-center text-center">
               <div className="flex h-14 w-14 items-center justify-center rounded-full bg-red-100"><IoWarningOutline size={28} className="text-red-600" /></div>
               <h2 className="mt-4 text-lg font-semibold text-slate-900">Delete Allocation</h2>
-              <p className="mt-2 text-sm text-slate-500">Delete allocation for <span className="font-semibold text-slate-800">{deleteAlloc.employee}</span> on <span className="font-semibold text-slate-800">{deleteAlloc.project}</span>?</p>
+              <p className="mt-2 text-sm text-slate-500">
+                Delete allocation for <span className="font-semibold text-slate-800">{deleteAlloc.employee ? `${deleteAlloc.employee.firstName} ${deleteAlloc.employee.lastName}` : 'Unassigned'}</span> on <span className="font-semibold text-slate-800">{deleteAlloc.project ? deleteAlloc.project.projectName : 'Unknown'}</span>?
+              </p>
             </div>
             <div className="mt-6 flex gap-3">
               <button onClick={() => setDeleteAlloc(null)} className="flex-1 rounded-xl border border-slate-200 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50">No, Cancel</button>
-              <button onClick={() => { setAllocations(p => p.filter(a => a.id !== deleteAlloc!.id)); toast.success('Deleted successfully'); setDeleteAlloc(null) }} className="flex-1 rounded-xl bg-red-600 py-2.5 text-sm font-medium text-white hover:bg-red-700">Yes, Delete</button>
+              <button onClick={handleDelete} className="flex-1 rounded-xl bg-red-600 py-2.5 text-sm font-medium text-white hover:bg-red-700">Yes, Delete</button>
             </div>
           </div>
         </div>
