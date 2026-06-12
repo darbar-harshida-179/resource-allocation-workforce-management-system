@@ -1,185 +1,156 @@
 import { useAuth } from '../../context/AuthContext'
 import MainLayout from '../../components/layout/MainLayout'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts'
+import {
+  IoFolderOutline, IoPeopleOutline, IoDocumentTextOutline, IoCalendarOutline,
+  IoCheckmarkOutline, IoCloseOutline,
+} from 'react-icons/io5'
+import { useState } from 'react'
+
+const stats = [
+  { label: 'My Projects', value: '2', sub: 'Active', icon: <IoFolderOutline size={24} className="text-blue-500" />, bg: 'bg-blue-50' },
+  { label: 'Assigned Resources', value: '3', sub: 'Across projects', icon: <IoPeopleOutline size={24} className="text-indigo-500" />, bg: 'bg-indigo-50' },
+  { label: 'Pending Timesheets', value: '3', sub: 'Awaiting review', icon: <IoDocumentTextOutline size={24} className="text-amber-500" />, bg: 'bg-amber-50' },
+  { label: 'Leave Requests', value: '2', sub: 'Pending approval', icon: <IoCalendarOutline size={24} className="text-green-500" />, bg: 'bg-green-50' },
+]
+
+const projects = [
+  { name: 'Project Alpha', status: 'In Progress', dates: '2026-01-01 — 2026-08-31' },
+  { name: 'Project Beta', status: 'In Progress', dates: '2026-02-01 — 2026-07-31' },
+  { name: 'Project Gamma', status: 'Completed', dates: '2025-10-01 — 2026-03-31' },
+  { name: 'Project Delta', status: 'Planning', dates: '2026-04-01 — 2026-12-31' },
+]
+
+const utilizationData = [
+  { name: 'Rohan Mehta', utilization: 100 },
+  { name: 'Ananya Patel', utilization: 80 },
+  { name: 'Vikram Singh', utilization: 50 },
+  { name: 'Neha Gupta', utilization: 0 },
+]
+
+const barColor = (v: number) => v === 100 ? '#ef4444' : v >= 50 ? '#f59e0b' : '#22c55e'
+
+const statusColor = (s: string) =>
+  s === 'In Progress' ? 'bg-blue-100 text-blue-700' : s === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-purple-100 text-purple-700'
 
 const ManagerDashboard = () => {
   const auth = useAuth()
+  const [leaves, setLeaves] = useState([
+    { id: 1, name: 'Rohan Mehta', info: 'Casual — 2026-06-15', status: 'pending' },
+    { id: 2, name: 'Vikram Singh', info: 'Earned — 2026-07-01', status: 'pending' },
+  ])
+  const [timesheets, setTimesheets] = useState([
+    { id: 1, name: 'Rohan Mehta', info: 'Project Alpha — 5h', status: 'pending' },
+    { id: 2, name: 'Ananya Patel', info: 'Project Alpha — 8h', status: 'pending' },
+  ])
 
   return (
     <MainLayout>
-      <div className="space-y-6 px-6 py-6">
-        {/* Page Header */}
+      <div className="space-y-6 px-4 py-6 sm:px-6">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Welcome back, {auth.user?.firstName}</h1>
-          <p className="mt-2 text-slate-600">Here's your project overview</p>
+          <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Welcome back, {auth.user?.firstName}</h1>
+          <p className="mt-1 text-sm text-slate-500">Here's your project overview</p>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl bg-white p-6 shadow-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-600">My Projects</p>
-                <p className="mt-2 text-3xl font-bold text-slate-900">2</p>
-                <p className="mt-2 text-xs text-slate-500">Active</p>
+        {/* Stats */}
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+          {stats.map((s) => (
+            <div key={s.label} className="rounded-2xl bg-white p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-slate-500">{s.label}</p>
+                  <p className="mt-1 text-3xl font-bold text-slate-900">{s.value}</p>
+                  <p className="mt-1 text-xs text-slate-400">{s.sub}</p>
+                </div>
+                <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${s.bg}`}>{s.icon}</div>
               </div>
-              <div className="text-4xl">📁</div>
             </div>
-          </div>
-
-          <div className="rounded-2xl bg-white p-6 shadow-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-600">Assigned Resources</p>
-                <p className="mt-2 text-3xl font-bold text-slate-900">3</p>
-                <p className="mt-2 text-xs text-slate-500">Across projects</p>
-              </div>
-              <div className="text-4xl">👥</div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl bg-white p-6 shadow-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-600">Pending Timesheets</p>
-                <p className="mt-2 text-3xl font-bold text-slate-900">3</p>
-                <p className="mt-2 text-xs text-slate-500">Awaiting review</p>
-              </div>
-              <div className="text-4xl">📋</div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl bg-white p-6 shadow-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-600">Leave Requests</p>
-                <p className="mt-2 text-3xl font-bold text-slate-900">2</p>
-                <p className="mt-2 text-xs text-slate-500">Pending approval</p>
-              </div>
-              <div className="text-4xl">🗓️</div>
-            </div>
-          </div>
+          ))}
         </div>
 
-        {/* My Projects + Resource Utilization side by side */}
+        {/* My Projects + Resource Utilization Chart */}
         <div className="grid gap-6 lg:grid-cols-2">
-
-        {/* My Projects */}
-        <div className="rounded-2xl bg-white p-6 shadow-md">
-          <h3 className="mb-4 text-lg font-semibold text-slate-900">My Projects</h3>
-          <div className="space-y-4">
-            {[
-              { name: 'Project Alpha', status: 'In Progress', progress: 60, dates: '2026-01-01 — 2026-08-31' },
-              { name: 'Project Beta', status: 'In Progress', progress: 40, dates: '2026-02-01 — 2026-07-31' },
-              { name: 'Project Gamma', status: 'Completed', progress: 100, dates: '2025-10-01 — 2026-03-31' },
-              { name: 'Project Delta', status: 'Planning', progress: 0, dates: '2026-04-01 — 2026-12-31' },
-            ].map((project, idx) => (
-              <div key={idx} className="border-b border-slate-200 pb-4 last:border-0">
-                <div className="mb-2 flex items-center justify-between">
-                  <h4 className="font-semibold text-slate-900">{project.name}</h4>
-                  <span
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                      project.status === 'In Progress'
-                        ? 'bg-blue-100 text-blue-700'
-                        : project.status === 'Completed'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-purple-100 text-purple-700'
-                    }`}
-                  >
-                    {project.status}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500">{project.dates}</p>
-                <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-slate-200">
-                  <div
-                    className="h-full bg-gradient-to-r from-indigo-500 to-indigo-600 transition-all"
-                    style={{ width: `${project.progress}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Resource Utilization */}
-        <div className="rounded-2xl bg-white p-6 shadow-md">
-          <h3 className="mb-4 text-lg font-semibold text-slate-900">Resource Utilization</h3>
-          <div className="space-y-3">
-            {[
-              { name: 'Rohan Mehta', department: 'Engineering', utilization: 100 },
-              { name: 'Ananya Patel', department: 'Design', utilization: 80 },
-              { name: 'Vikram Singh', department: 'Engineering', utilization: 50 },
-              { name: 'Neha Gupta', department: 'QA', utilization: 0 },
-            ].map((resource, idx) => (
-              <div key={idx} className="flex items-center gap-4">
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-slate-900">{resource.name}</p>
-                  <p className="text-xs text-slate-500">{resource.department}</p>
-                </div>
-                <div className="flex-1">
-                  <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
-                    <div
-                      className={`h-full transition-all ${
-                        resource.utilization === 100
-                          ? 'bg-red-500'
-                          : resource.utilization >= 50
-                            ? 'bg-amber-500'
-                            : 'bg-green-500'
-                      }`}
-                      style={{ width: `${resource.utilization}%` }}
-                    />
-                  </div>
-                </div>
-                <div className="w-12 text-right">
-                  <p className="text-sm font-semibold text-slate-900">{resource.utilization}%</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        </div>{/* end grid */}
-
-        {/* Pending Approvals */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Leave Requests */}
-          <div className="rounded-2xl bg-white p-6 shadow-md">
-            <h3 className="mb-4 text-lg font-semibold text-slate-900">Leave Requests</h3>
+          <div className="rounded-2xl bg-white p-5 shadow-sm">
+            <h3 className="mb-4 text-base font-semibold text-slate-900">My Projects</h3>
             <div className="space-y-3">
-              {[
-                { name: 'Rohan Mehta', dates: 'casual — 2026-06-15', action: 'approve' },
-                { name: 'Vikram Singh', dates: 'earned — 2026-07-01', action: 'approve' },
-              ].map((request, idx) => (
-                <div key={idx} className="flex items-center justify-between rounded-lg bg-amber-50 p-3">
+              {projects.map((p, i) => (
+                <div key={i} className="flex items-center justify-between border-b border-slate-100 pb-3 last:border-0">
                   <div>
-                    <p className="text-sm font-medium text-slate-900">{request.name}</p>
-                    <p className="text-xs text-slate-600">{request.dates}</p>
+                    <p className="text-sm font-medium text-slate-900">{p.name}</p>
+                    <p className="text-xs text-slate-400">{p.dates}</p>
                   </div>
-                  <div className="flex gap-2">
-                    <button className="rounded text-green-600 hover:bg-green-100">✓</button>
-                    <button className="rounded text-red-600 hover:bg-red-100">✕</button>
-                  </div>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusColor(p.status)}`}>{p.status}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Timesheets */}
-          <div className="rounded-2xl bg-white p-6 shadow-md">
-            <h3 className="mb-4 text-lg font-semibold text-slate-900">Timesheets</h3>
+          <div className="rounded-2xl bg-white p-5 shadow-sm">
+            <h3 className="mb-4 text-base font-semibold text-slate-900">Resource Utilization</h3>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={utilizationData} layout="vertical" barSize={14} margin={{ top: 0, right: 10, bottom: 0, left: 0 }}>
+                <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11, fill: '#94a3b8' }} axisLine={false} tickLine={false} unit="%" />
+                <YAxis type="category" dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} width={110} />
+                <Tooltip formatter={(v) => [`${v}%`, 'Utilization']} cursor={{ fill: '#f1f5f9' }} />
+                <Bar dataKey="utilization" radius={[0, 6, 6, 0]}>
+                  {utilizationData.map((d, i) => <Cell key={i} fill={barColor(d.utilization)} />)}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Pending Approvals */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <div className="rounded-2xl bg-white p-5 shadow-sm">
+            <h3 className="mb-4 text-base font-semibold text-slate-900">Leave Requests</h3>
             <div className="space-y-3">
-              {[
-                { name: 'Rohan Mehta', project: 'Project Alpha — 5h', action: 'approve' },
-                { name: 'Ananya Patel', project: 'Project Alpha — 8h', action: 'approve' },
-              ].map((timesheet, idx) => (
-                <div key={idx} className="flex items-center justify-between rounded-lg bg-blue-50 p-3">
+              {leaves.map((r) => (
+                <div key={r.id} className="flex items-center justify-between rounded-xl bg-amber-50 px-4 py-3">
                   <div>
-                    <p className="text-sm font-medium text-slate-900">{timesheet.name}</p>
-                    <p className="text-xs text-slate-600">{timesheet.project}</p>
+                    <p className="text-sm font-medium text-slate-900">{r.name}</p>
+                    <p className="text-xs text-slate-500">{r.info}</p>
                   </div>
-                  <div className="flex gap-2">
-                    <button className="rounded text-green-600 hover:bg-green-100">✓</button>
-                    <button className="rounded text-red-600 hover:bg-red-100">✕</button>
+                  {r.status === 'pending' && (
+                    <div className="flex gap-2">
+                      <button onClick={() => setLeaves(p => p.map(x => x.id === r.id ? { ...x, status: 'approved' } : x))}
+                        className="rounded-lg p-1.5 text-green-600 hover:bg-green-100"><IoCheckmarkOutline size={17} /></button>
+                      <button onClick={() => setLeaves(p => p.map(x => x.id === r.id ? { ...x, status: 'rejected' } : x))}
+                        className="rounded-lg p-1.5 text-red-500 hover:bg-red-100"><IoCloseOutline size={17} /></button>
+                    </div>
+                  )}
+                  {r.status !== 'pending' && (
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${r.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      {r.status.charAt(0).toUpperCase() + r.status.slice(1)}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl bg-white p-5 shadow-sm">
+            <h3 className="mb-4 text-base font-semibold text-slate-900">Timesheets</h3>
+            <div className="space-y-3">
+              {timesheets.map((t) => (
+                <div key={t.id} className="flex items-center justify-between rounded-xl bg-blue-50 px-4 py-3">
+                  <div>
+                    <p className="text-sm font-medium text-slate-900">{t.name}</p>
+                    <p className="text-xs text-slate-500">{t.info}</p>
                   </div>
+                  {t.status === 'pending' && (
+                    <div className="flex gap-2">
+                      <button onClick={() => setTimesheets(p => p.map(x => x.id === t.id ? { ...x, status: 'approved' } : x))}
+                        className="rounded-lg p-1.5 text-green-600 hover:bg-green-100"><IoCheckmarkOutline size={17} /></button>
+                      <button onClick={() => setTimesheets(p => p.map(x => x.id === t.id ? { ...x, status: 'rejected' } : x))}
+                        className="rounded-lg p-1.5 text-red-500 hover:bg-red-100"><IoCloseOutline size={17} /></button>
+                    </div>
+                  )}
+                  {t.status !== 'pending' && (
+                    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${t.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                      {t.status.charAt(0).toUpperCase() + t.status.slice(1)}
+                    </span>
+                  )}
                 </div>
               ))}
             </div>

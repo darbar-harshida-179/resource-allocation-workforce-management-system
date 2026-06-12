@@ -7,19 +7,20 @@ interface MainLayoutProps {
 }
 
 const MainLayout = ({ children }: MainLayoutProps) => {
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [collapsed, setCollapsed] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   return (
     <div className="flex h-screen bg-slate-100">
-      {/* Sidebar */}
-      <Sidebar onClose={() => setSidebarOpen(false)} />
+      <Sidebar
+        collapsed={collapsed}
+        onToggle={() => setCollapsed((c) => !c)}
+        mobileOpen={mobileOpen}
+        onMobileClose={() => setMobileOpen(false)}
+      />
 
-      {/* Main content */}
-      <div className="flex flex-1 flex-col md:ml-64">
-        {/* Navbar */}
-        <Navbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
-
-        {/* Page content */}
+      <div className={`flex flex-1 flex-col transition-all duration-300 ${collapsed ? 'md:ml-16' : 'md:ml-64'}`}>
+        <Navbar onMobileMenuClick={() => setMobileOpen((o) => !o)} />
         <main className="flex-1 overflow-y-auto">{children}</main>
       </div>
     </div>

@@ -1,178 +1,144 @@
 import MainLayout from '../../components/layout/MainLayout'
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
+} from 'recharts'
+import {
+  IoPeopleOutline, IoFolderOutline, IoTimeOutline, IoCalendarOutline,
+  IoDocumentTextOutline, IoCheckmarkCircleOutline, IoAddCircleOutline, IoAlertCircleOutline,
+} from 'react-icons/io5'
 
-const AdminDashboard = () => {
+const utilizationData = [
+  { month: 'Jan', value: 68 },
+  { month: 'Feb', value: 74 },
+  { month: 'Mar', value: 82 },
+  { month: 'Apr', value: 79 },
+  { month: 'May', value: 88 },
+  { month: 'Jun', value: 91 },
+]
 
-  return (
-    <MainLayout>
-      <div className="space-y-6 px-6 py-6">
-        {/* Page Header */}
-        <div>
-          <h1 className="text-3xl font-bold text-slate-900">Admin Dashboard</h1>
-          <p className="mt-2 text-slate-600">Organization overview — June 2026</p>
-        </div>
+const deptData = [
+  { name: 'Engineering', value: 12 },
+  { name: 'Design', value: 5 },
+  { name: 'QA', value: 4 },
+  { name: 'Backend', value: 7 },
+  { name: 'Other', value: 3 },
+]
 
-        {/* Stats Grid */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="rounded-2xl bg-white p-6 shadow-md">
+const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981']
+
+const stats = [
+  { label: 'Total Employees', value: '31', sub: '+3 this month', icon: <IoPeopleOutline size={26} className="text-indigo-500" />, bg: 'bg-indigo-50' },
+  { label: 'Active Projects', value: '2', sub: '4 total', icon: <IoFolderOutline size={26} className="text-blue-500" />, bg: 'bg-blue-50' },
+  { label: 'Allocated Resources', value: '5', sub: '16% unallocated', icon: <IoTimeOutline size={26} className="text-amber-500" />, bg: 'bg-amber-50' },
+  { label: 'On Leave Today', value: '2', sub: 'Approved leaves', icon: <IoCalendarOutline size={26} className="text-green-500" />, bg: 'bg-green-50' },
+]
+
+const projectStatus = [
+  { label: 'In Progress', count: 2, color: 'bg-blue-500' },
+  { label: 'Planning', count: 1, color: 'bg-purple-500' },
+  { label: 'Completed', count: 1, color: 'bg-green-500' },
+  { label: 'On Hold', count: 0, color: 'bg-red-500' },
+]
+
+const activity = [
+  { text: 'Rohan Mehta submitted timesheet', time: '2h ago', icon: <IoDocumentTextOutline size={16} className="text-indigo-500" /> },
+  { text: "Ananya Patel's leave approved", time: '4h ago', icon: <IoCheckmarkCircleOutline size={16} className="text-green-500" /> },
+  { text: 'Project Delta allocation created', time: '6h ago', icon: <IoAddCircleOutline size={16} className="text-blue-500" /> },
+  { text: 'Vikram Singh applied for leave', time: '1d ago', icon: <IoCalendarOutline size={16} className="text-amber-500" /> },
+  { text: 'Project Gamma marked complete', time: '2d ago', icon: <IoCheckmarkCircleOutline size={16} className="text-green-500" /> },
+]
+
+const AdminDashboard = () => (
+  <MainLayout>
+    <div className="space-y-6 px-4 py-6 sm:px-6">
+      <div>
+        <h1 className="text-2xl font-bold text-slate-900 sm:text-3xl">Admin Dashboard</h1>
+        <p className="mt-1 text-sm text-slate-500">Organization overview — June 2026</p>
+      </div>
+
+      {/* Stats */}
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        {stats.map((s) => (
+          <div key={s.label} className="rounded-2xl bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-600">Total Employees</p>
-                <p className="mt-2 text-3xl font-bold text-slate-900">31</p>
-                <p className="mt-2 text-xs text-slate-500">+3 this month</p>
+                <p className="text-xs text-slate-500">{s.label}</p>
+                <p className="mt-1 text-3xl font-bold text-slate-900">{s.value}</p>
+                <p className="mt-1 text-xs text-slate-400">{s.sub}</p>
               </div>
-              <div className="text-4xl">👥</div>
+              <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${s.bg}`}>
+                {s.icon}
+              </div>
             </div>
           </div>
+        ))}
+      </div>
 
-          <div className="rounded-2xl bg-white p-6 shadow-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-600">Active Projects</p>
-                <p className="mt-2 text-3xl font-bold text-slate-900">2</p>
-                <p className="mt-2 text-xs text-slate-500">4 total</p>
-              </div>
-              <div className="text-4xl">📁</div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl bg-white p-6 shadow-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-600">Allocated Resources</p>
-                <p className="mt-2 text-3xl font-bold text-slate-900">5</p>
-                <p className="mt-2 text-xs text-slate-500">16% unallocated</p>
-              </div>
-              <div className="text-4xl">⏰</div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl bg-white p-6 shadow-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-slate-600">On Leave Today</p>
-                <p className="mt-2 text-3xl font-bold text-slate-900">2</p>
-                <p className="mt-2 text-xs text-slate-500">Approved leaves</p>
-              </div>
-              <div className="text-4xl">🗓️</div>
-            </div>
-          </div>
+      {/* Charts */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* Bar Chart */}
+        <div className="rounded-2xl bg-white p-5 shadow-sm">
+          <h3 className="mb-4 text-base font-semibold text-slate-900">Monthly Utilization Trend</h3>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={utilizationData} barSize={32}>
+              <XAxis dataKey="month" tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <YAxis domain={[0, 100]} tick={{ fontSize: 12, fill: '#94a3b8' }} axisLine={false} tickLine={false} unit="%" />
+              <Tooltip formatter={(v) => [`${v}%`, 'Utilization']} cursor={{ fill: '#f1f5f9' }} />
+              <Bar dataKey="value" fill="#6366f1" radius={[6, 6, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
 
-        {/* Charts Section */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Monthly Utilization Trend */}
-          <div className="rounded-2xl bg-white p-6 shadow-md">
-            <h3 className="mb-4 text-lg font-semibold text-slate-900">Monthly Utilization Trend</h3>
-            <div className="flex items-end justify-around" style={{ height: '200px' }}>
-              {[68, 74, 82, 79, 88, 91].map((value, idx) => (
-                <div key={idx} className="flex flex-col items-center gap-2">
-                  <div
-                    className="w-12 rounded-lg bg-indigo-600"
-                    style={{ height: `${(value / 100) * 150}px` }}
-                  />
-                  <p className="text-xs text-slate-600">{value}</p>
-                  <p className="text-xs font-medium text-slate-500">
-                    {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'][idx]}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Department Distribution */}
-          <div className="rounded-2xl bg-white p-6 shadow-md">
-            <h3 className="mb-4 text-lg font-semibold text-slate-900">Department Distribution</h3>
-            <div className="flex items-center justify-around">
-              <div className="relative h-40 w-40">
-                <svg viewBox="0 0 100 100" className="h-full w-full">
-                  <circle cx="50" cy="50" r="40" fill="none" stroke="#6366f1" strokeWidth="8" strokeDasharray="120 200" />
-                  <circle cx="50" cy="50" r="40" fill="none" stroke="#8b5cf6" strokeWidth="8" strokeDasharray="60 200" strokeDashoffset="-120" />
-                  <circle cx="50" cy="50" r="40" fill="none" stroke="#ec4899" strokeWidth="8" strokeDasharray="40 200" strokeDashoffset="-180" />
-                  <circle cx="50" cy="50" r="40" fill="none" stroke="#f59e0b" strokeWidth="8" strokeDasharray="30 200" strokeDashoffset="-220" />
-                  <text x="50" y="50" textAnchor="middle" dy="0.3em" className="text-lg font-bold" fill="#000">31</text>
-                </svg>
-              </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-indigo-600" />
-                  <span className="text-sm text-slate-700">Engineering - 12</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-purple-600" />
-                  <span className="text-sm text-slate-700">Design - 5</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-pink-600" />
-                  <span className="text-sm text-slate-700">QA - 4</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-amber-600" />
-                  <span className="text-sm text-slate-700">Backend - 7</span>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Pie Chart */}
+        <div className="rounded-2xl bg-white p-5 shadow-sm">
+          <h3 className="mb-4 text-base font-semibold text-slate-900">Department Distribution</h3>
+          <ResponsiveContainer width="100%" height={220}>
+            <PieChart>
+              <Pie data={deptData} cx="50%" cy="50%" innerRadius={55} outerRadius={85} paddingAngle={3} dataKey="value">
+                {deptData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+              </Pie>
+              <Tooltip formatter={(v, n) => [v, n]} />
+              <Legend iconType="circle" iconSize={10} formatter={(v) => <span className="text-xs text-slate-600">{v}</span>} />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
+      </div>
 
-        {/* Project Status */}
-        <div className="rounded-2xl bg-white p-6 shadow-md">
-          <h3 className="mb-4 text-lg font-semibold text-slate-900">Project Status</h3>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-indigo-600" />
-                <span className="text-sm text-slate-700">In Progress</span>
-              </div>
-              <span className="text-sm font-semibold text-slate-900">2</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-blue-600" />
-                <span className="text-sm text-slate-700">Planning</span>
-              </div>
-              <span className="text-sm font-semibold text-slate-900">1</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-green-600" />
-                <span className="text-sm text-slate-700">Completed</span>
-              </div>
-              <span className="text-sm font-semibold text-slate-900">1</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-3 rounded-full bg-red-600" />
-                <span className="text-sm text-slate-700">On Hold</span>
-              </div>
-              <span className="text-sm font-semibold text-slate-900">0</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="rounded-2xl bg-white p-6 shadow-md">
-          <h3 className="mb-4 text-lg font-semibold text-slate-900">Recent Activity</h3>
+      {/* Project Status + Recent Activity */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="rounded-2xl bg-white p-5 shadow-sm">
+          <h3 className="mb-4 text-base font-semibold text-slate-900">Project Status</h3>
           <div className="space-y-3">
-            {[
-              { activity: 'Rohan Mehta submitted timesheet', time: '2h ago', icon: '📋' },
-              { activity: "Ananya Patel's leave approved", time: '4h ago', icon: '✅' },
-              { activity: 'Project Delta allocation created', time: '6h ago', icon: '📁' },
-              { activity: 'Vikram Singh applied for leave', time: '1d ago', icon: '🗓️' },
-              { activity: 'Project Gamma marked complete', time: '2d ago', icon: '✅' },
-            ].map((item, idx) => (
-              <div key={idx} className="flex items-center justify-between border-b border-slate-200 pb-3 last:border-0">
-                <div className="flex items-center gap-3">
-                  <span>{item.icon}</span>
-                  <p className="text-sm text-slate-700">{item.activity}</p>
+            {projectStatus.map((p) => (
+              <div key={p.label} className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className={`h-2.5 w-2.5 rounded-full ${p.color}`} />
+                  <span className="text-sm text-slate-700">{p.label}</span>
                 </div>
-                <p className="text-xs text-slate-500">{item.time}</p>
+                <span className="text-sm font-semibold text-slate-900">{p.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl bg-white p-5 shadow-sm">
+          <h3 className="mb-4 text-base font-semibold text-slate-900">Recent Activity</h3>
+          <div className="space-y-3">
+            {activity.map((a, i) => (
+              <div key={i} className="flex items-center justify-between border-b border-slate-100 pb-3 last:border-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="shrink-0">{a.icon}</div>
+                  <p className="text-sm text-slate-700">{a.text}</p>
+                </div>
+                <p className="shrink-0 text-xs text-slate-400 ml-2">{a.time}</p>
               </div>
             ))}
           </div>
         </div>
       </div>
-    </MainLayout>
-  )
-}
+    </div>
+  </MainLayout>
+)
 
 export default AdminDashboard
