@@ -6,6 +6,14 @@ import MainLayout from '../../components/layout/MainLayout'
 import { IoPencil, IoTrash, IoClose, IoFolderOpen, IoWarningOutline, IoReloadOutline } from 'react-icons/io5'
 import { useAuth } from '../../context/AuthContext'
 import { getProjects, createProject, updateProject, deleteProject as deleteProjectApi } from '../../services/projectService'
+import { getManagers } from '../../services/employeeService'
+
+interface Manager {
+  _id: string
+  firstName: string
+  lastName: string
+  email: string
+}
 
 interface Project {
   _id: string
@@ -15,11 +23,7 @@ interface Project {
   startDate: string
   endDate: string
   resourcesCount?: number
-  manager?: {
-    _id: string
-    firstName: string
-    lastName: string
-  }
+  manager?: Manager
 }
 
 const STATUS_OPTIONS = ['planning', 'in-progress', 'on-hold', 'completed']
@@ -42,7 +46,7 @@ const statusLabel = (status: string) => {
   }
 }
 
-const formFields = (formik: any) => (
+const formFields = (formik: any, managers: Manager[]) => (
   <div className="space-y-4">
     <div>
       <label className="mb-1.5 block text-sm font-medium text-slate-700">Project Name</label>
@@ -111,6 +115,25 @@ const formFields = (formik: any) => (
       </select>
       {formik.touched.status && formik.errors.status && <p className="mt-1 text-xs text-red-500">{formik.errors.status}</p>}
     </div>
+
+    <div>
+      <label className="mb-1.5 block text-sm font-medium text-slate-700">Manager</label>
+      <select
+        name="manager"
+        value={formik.values.manager}
+        onChange={formik.handleChange}
+        onBlur={formik.handleBlur}
+        className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+      >
+        <option value="">Select manager</option>
+        {managers.map((m) => (
+          <option key={m._id} value={m._id}>
+            {m.firstName} {m.lastName}
+          </option>
+        ))}
+      </select>
+      {formik.touched.manager && formik.errors.manager && <p className="mt-1 text-xs text-red-500">{formik.errors.manager}</p>}
+    </div>
   </div>
 )
 
@@ -125,6 +148,7 @@ const validationSchema = Yup.object({
       return !startDate || !value || value > startDate
     }),
   status: Yup.string().required('Status is required'),
+  manager: Yup.string().required('Manager is required'),
 })
 
 // ── Employee read-only view ──
@@ -168,6 +192,7 @@ const ProjectsPage = () => {
   const [editProject, setEditProject] = useState<Project | null>(null)
   const [deleteProject, setDeleteProject] = useState<Project | null>(null)
   const [projects, setProjects] = useState<Project[]>([])
+  const [managers, setManagers] = useState<Manager[]>([])
   const [loading, setLoading] = useState(true)
 
   const fetchProjectsList = async () => {
@@ -182,13 +207,23 @@ const ProjectsPage = () => {
     }
   }
 
+  const fetchManagersList = async () => {
+    try {
+      const res = await getManagers()
+      setManagers(res.data || [])
+    } catch {
+      toast.error('Failed to fetch managers')
+    }
+  }
+
   useEffect(() => {
     fetchProjectsList()
+    fetchManagersList()
   }, [])
 
   // ── Add formik ──
   const addFormik = useFormik({
-    initialValues: { name: '', description: '', startDate: '', endDate: '', status: '' },
+    initialValues: { name: '', description: '', startDate: '', endDate: '', status: '', manager: '' },
     validationSchema,
     onSubmit: async (values, { resetForm }) => {
       try {
@@ -198,6 +233,7 @@ const ProjectsPage = () => {
           startDate: values.startDate,
           endDate: values.endDate,
           status: values.status,
+          manager: values.manager,
         })
         toast.success('Project created successfully')
         resetForm()
@@ -218,6 +254,7 @@ const ProjectsPage = () => {
       startDate: editProject?.startDate ? new Date(editProject.startDate).toISOString().split('T')[0] : '',
       endDate: editProject?.endDate ? new Date(editProject.endDate).toISOString().split('T')[0] : '',
       status: editProject?.status ?? '',
+      manager: editProject?.manager?._id ?? '',
     },
     validationSchema,
     onSubmit: async (values, { resetForm }) => {
@@ -228,6 +265,7 @@ const ProjectsPage = () => {
           startDate: values.startDate,
           endDate: values.endDate,
           status: values.status,
+          manager: values.manager,
         })
         toast.success('Project updated successfully')
         resetForm()
@@ -352,7 +390,7 @@ const ProjectsPage = () => {
               </button>
             </div>
             <form onSubmit={addFormik.handleSubmit} className="px-6 py-5">
-              {formFields(addFormik)}
+              {formFields(addFormik, managers)}
               <div className="mt-5 flex gap-3">
                 <button type="button" onClick={() => { addFormik.resetForm(); setShowAddModal(false) }}
                   className="flex-1 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
@@ -384,7 +422,7 @@ const ProjectsPage = () => {
               </button>
             </div>
             <form onSubmit={editFormik.handleSubmit} className="px-6 py-5">
-              {formFields(editFormik)}
+              {formFields(editFormik, managers)}
               <div className="mt-5 flex gap-3">
                 <button type="button" onClick={() => setEditProject(null)}
                   className="flex-1 rounded-xl border border-slate-200 bg-white py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50">

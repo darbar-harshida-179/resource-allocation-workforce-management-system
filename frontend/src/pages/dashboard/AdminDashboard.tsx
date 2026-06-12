@@ -23,7 +23,7 @@ const AdminDashboard = () => {
   })
   const [projectStatusData, setProjectStatusData] = useState<{ name: string; value: number }[]>([])
   const [departmentData, setDepartmentData] = useState<{ name: string; value: number }[]>([])
-  const [recentActivity, setRecentActivity] = useState<{ text: string; time: string }[]>([])
+  const [recentActivity, setRecentActivity] = useState<{ text: string; hours: number; time: string }[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -79,6 +79,7 @@ const AdminDashboard = () => {
         const timesheets: any[] = tsRes.data || []
         const activity = timesheets.slice(0, 5).map((ts: any) => ({
           text: `${ts.employee?.firstName ?? ''} ${ts.employee?.lastName ?? ''} logged ${ts.hours}h on ${ts.project?.projectName ?? 'Project'}`,
+          hours: ts.hours || 0,
           time: new Date(ts.createdAt || ts.date).toLocaleDateString(),
         }))
         setRecentActivity(activity)
@@ -139,8 +140,8 @@ const AdminDashboard = () => {
           {/* Department Distribution */}
           <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100 flex flex-col">
             <h3 className="mb-4 text-base font-semibold text-slate-900">Department Distribution</h3>
-            <div className="h-64 w-full flex-1">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
                   <Pie
                     data={departmentData}
@@ -165,8 +166,8 @@ const AdminDashboard = () => {
           {/* Project Status */}
           <div className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100 flex flex-col">
             <h3 className="mb-4 text-base font-semibold text-slate-900">Project Status Breakdown</h3>
-            <div className="h-64 w-full flex-1">
-              <ResponsiveContainer width="100%" height="100%">
+            <div className="h-64 w-full">
+              <ResponsiveContainer width="100%" height={260}>
                 <PieChart>
                   <Pie
                     data={projectStatusData}
@@ -198,9 +199,17 @@ const AdminDashboard = () => {
               <p className="text-sm text-slate-400">No recent activity yet.</p>
             ) : (
               recentActivity.map((a, i) => (
-                <div key={i} className="flex items-center justify-between border-b border-slate-100 pb-3 last:border-0">
-                  <p className="text-sm text-slate-700">{a.text}</p>
-                  <p className="shrink-0 text-xs text-slate-400 ml-2">{a.time}</p>
+                <div key={i} className="border-b border-slate-100 pb-3 last:border-0">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-slate-700 font-medium">{a.text}</p>
+                    <p className="shrink-0 text-xs text-slate-400 ml-2">{a.time}</p>
+                  </div>
+                  <div className="mt-2 w-full max-w-xs bg-slate-100 rounded-full h-1">
+                    <div
+                      className="bg-indigo-600 h-1 rounded-full transition-all duration-300"
+                      style={{ width: `${Math.min(100, (a.hours / 8) * 100)}%` }}
+                    />
+                  </div>
                 </div>
               ))
             )}

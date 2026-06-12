@@ -8,6 +8,7 @@ import AdminDashboard from '../pages/dashboard/AdminDashboard'
 import EmployeeDashboard from '../pages/dashboard/EmployeeDashboard'
 import ManagerDashboard from '../pages/dashboard/ManagerDashboard'
 import EmployeesPage from '../pages/employees/EmployeesPage'
+import ManagersPage from '../pages/managers/ManagersPage'
 import ProjectsPage from '../pages/projects/ProjectsPage'
 import AllocationsPage from '../pages/allocations/AllocationsPage'
 import LeaveRequestsPage from '../pages/leave/LeaveRequestsPage'
@@ -65,6 +66,16 @@ const AppRoutes = () => {
         element={
           <ProtectedRoute>
             <EmployeesPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/managers"
+        element={
+          <ProtectedRoute>
+            <RoleRoute requiredRole="admin">
+              <ManagersPage />
+            </RoleRoute>
           </ProtectedRoute>
         }
       />

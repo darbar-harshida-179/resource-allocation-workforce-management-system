@@ -191,3 +191,27 @@ export const assignDepartment = async (
         });
     }
 };
+
+export const getAllManagers = async (
+    req: Request,
+    res: Response
+): Promise<void> => {
+    try {
+        const managers = await User.find({
+            role: UserRole.MANAGER,
+        }).select(
+            "-password -refreshToken -verificationToken -resetPasswordToken"
+        );
+
+        res.status(200).json({
+            success: true,
+            count: managers.length,
+            data: managers,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch managers",
+        });
+    }
+};

@@ -30,11 +30,18 @@ export const createProject = async (
 };
 
 export const getProjects = async (
-    req: Request,
+    req: AuthRequest,
     res: Response
 ): Promise<void> => {
     try {
-        const projects = await Project.find()
+        let query = {};
+        if (req.user?.role === "employee") {
+            const allocations = await Allocation.find({ employee: req.user.id });
+            const projectIds = allocations.map(a => a.project);
+            query = { _id: { $in: projectIds } };
+        }
+
+        const projects = await Project.find(query)
             .populate(
                 "manager",
                 "firstName lastName email role"
