@@ -133,7 +133,7 @@ const AllocationsPage = () => {
   }, [])
 
   // Calculate dynamic utilization summaries per employee
-  const utilizationMap: Record<string, { name: string; utilization: number }> = {}
+  const utilizationMap: Record<string, { name: string; utilization: number }> = {}  
   
   // Initialize map with all employees
   employees.forEach(emp => {
@@ -224,7 +224,7 @@ const AllocationsPage = () => {
       </MainLayout>
     )
   }
-
+                                      
   return (
     <MainLayout>
       <div className="space-y-5 px-4 py-6 sm:px-6">
