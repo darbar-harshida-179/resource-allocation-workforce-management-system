@@ -74,6 +74,8 @@ export const registerUser = async (
             message: "Register successful",
         });
     } catch (error) {
+        console.error("Register Error:", error);
+
         res.status(500).json({
             success: false,
             message: "Failed to create user",
