@@ -9,7 +9,6 @@ async function createTestUsers() {
   try {
     await mongoose.connect(process.env.MONGO_URI!)
 
-    // Create manager
     const managerExists = await User.findOne({ email: 'manager@gmail.com' })
     if (!managerExists) {
       const hashedPassword = await bcrypt.hash('Manager@123', 10)
@@ -30,7 +29,6 @@ async function createTestUsers() {
       console.log('Manager already exists')
     }
 
-    // Create employee
     const employeeExists = await User.findOne({ email: 'employee@gmail.com' })
     if (!employeeExists) {
       const hashedPassword = await bcrypt.hash('Employee@123', 10)

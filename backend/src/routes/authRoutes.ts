@@ -13,10 +13,12 @@ import {
 } from "../controllers/authController";
 
 import { protect } from "../middleware/authMiddleware";
+import { registerValidation } from "../validations/authValidation";
+import { validateRequest } from "../middleware/validationMiddleware";
 
 const router = Router();
-
-router.post("/register", registerUser); 
+router.post("/register", registerValidation, validateRequest, registerUser);
+router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.post("/forgot-password", forgotPassword);
 router.post("/reset-password/:token", resetPassword);

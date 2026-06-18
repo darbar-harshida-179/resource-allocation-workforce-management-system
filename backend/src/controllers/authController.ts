@@ -54,34 +54,22 @@ export const registerUser = async (
         const verificationUrl =
             `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
 
-    //     await sendEmail({
-    //         to: user.email,
-    //         subject: "Verify Your Email",
-    //         html: `
-    //     <h3>Email Verification</h3>
-    //     <p>Click below link to verify your account:</p>
-    //     <a href="${verificationUrl}">
-    //         Verify Email
-    //     </a>
-    // `,
-    //     });
 
-
-    try {
-    await sendEmail({
-        to: user.email,
-        subject: "Verify Your Email",
-        html: `
+        try {
+            await sendEmail({
+                to: user.email,
+                subject: "Verify Your Email",
+                html: `
         <h3>Email Verification</h3>
         <p>Click below link to verify your account:</p>
         <a href="${verificationUrl}">
             Verify Email
         </a>
         `,
-    });
-} catch (emailError) {
-    console.error("Email Error:", emailError);
-}
+            });
+        } catch (emailError) {
+            console.error("Email Error:", emailError);
+        }
 
         const { password: _, verificationToken: __, ...safeUser } = userResponse;
 
@@ -356,10 +344,10 @@ export const forgotPassword = async (
         // });
 
         try {
-    await sendEmail({
-        to: user.email,
-        subject: "Password Reset Request",
-        html: `
+            await sendEmail({
+                to: user.email,
+                subject: "Password Reset Request",
+                html: `
             <h3>Password Reset</h3>
             <p>Click below link to reset your password:</p>
             <a href="${resetUrl}">
@@ -367,15 +355,15 @@ export const forgotPassword = async (
             </a>
             <p>Link expires in 10 minutes.</p>
             `,
-    });
-} catch (emailError) {
-    console.error("Password Reset Email Error:", emailError);
-}
+            });
+        } catch (emailError) {
+            console.error("Password Reset Email Error:", emailError);
+        }
 
-res.status(200).json({
-    success: true,
-    message: "Password reset email processed",
-});
+        res.status(200).json({
+            success: true,
+            message: "Password reset email processed",
+        });
 
         res.status(200).json({
             success: true,

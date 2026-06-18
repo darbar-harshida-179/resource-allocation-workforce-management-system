@@ -14,7 +14,6 @@ import reportRoutes from "./routes/reportRoutes"
 import dashboardRoutes from "./routes/dashboardRoutes"
 const app = express();
 
-// CORS Configuration
 app.use(cors({
   origin: true,
   credentials: true,

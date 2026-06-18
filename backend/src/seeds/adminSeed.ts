@@ -10,7 +10,6 @@ export const seedAdmin = async () => {
     });
 
     if (adminExists) {
-      // Ensure admin is always verified
       if (!adminExists.isVerified) {
         adminExists.isVerified = true;
         await adminExists.save();
