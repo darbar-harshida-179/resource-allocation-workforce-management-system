@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext'
 import MainLayout from '../../components/layout/MainLayout'
 import { RadialBarChart, RadialBar, ResponsiveContainer } from 'recharts'
 import {
-  IoFolderOutline, IoTimeOutline, IoCalendarOutline, IoBarChartOutline, IoReloadOutline,
+  IoFolderOutline, IoTimeOutline, IoCalendarOutline, IoReloadOutline,
 } from 'react-icons/io5'
 import { getEmployeeDashboard } from '../../services/dashboardService'
 import { getMyTimesheets } from '../../services/timesheetService'
@@ -46,10 +46,10 @@ const EmployeeDashboard = () => {
     ? (leaveBalance.casual || 0) + (leaveBalance.sick || 0) + (leaveBalance.earned || 0)
     : 0
 
-  const todayStr = new Date().toDateString()
-  const loggedToday = timesheets
-    .filter((t: any) => new Date(t.date).toDateString() === todayStr)
-    .reduce((sum: number, t: any) => sum + (t.hours || 0), 0)
+  // const todayStr = new Date().toDateString()
+  // const loggedToday = timesheets
+  //   .filter((t: any) => new Date(t.date).toDateString() === todayStr)
+  //   .reduce((sum: number, t: any) => sum + (t.hours || 0), 0)
 
   const statItems = [
     { label: 'Assigned Projects', value: dashData?.assignedProjects ?? 0, sub: 'Active assignments', icon: <IoFolderOutline size={24} className="text-blue-500" />, bg: 'bg-blue-50' },
