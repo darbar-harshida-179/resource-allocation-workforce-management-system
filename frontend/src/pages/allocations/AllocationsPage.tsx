@@ -33,9 +33,9 @@ const getBarColor = (p: number) => p === 100 ? 'bg-red-500' : p >= 60 ? 'bg-ambe
 const schema = Yup.object({
   employee: Yup.string().required('Employee is required'),
   project: Yup.string().required('Project is required'),
-  allocationPercentage: Yup.number().typeError('Must be a number').min(1,'Min 1%').max(100,'Max 100%').required('Required'),
+  allocationPercentage: Yup.number().typeError('Must be a number').min(1, 'Min 1%').max(100, 'Max 100%').required('Required'),
   startDate: Yup.string().required('Start date is required'),
-  endDate: Yup.string().required('End date is required').test('after', 'Must be after start date', function(v) { return !this.parent.startDate || !v || v > this.parent.startDate }),
+  endDate: Yup.string().required('End date is required').test('after', 'Must be after start date', function (v) { return !this.parent.startDate || !v || v > this.parent.startDate }),
 })
 
 const ic = 'absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none'
@@ -109,6 +109,9 @@ const AllocationsPage = () => {
   const [employees, setEmployees] = useState<any[]>([])
   const [projects, setProjects] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+
+  const ITEMS_PER_PAGE = 5
 
   const fetchData = async () => {
     try {
@@ -133,14 +136,14 @@ const AllocationsPage = () => {
   }, [])
 
   // Calculate dynamic utilization summaries per employee
-  const utilizationMap: Record<string, { name: string; utilization: number }> = {}  
-  
+  const utilizationMap: Record<string, { name: string; utilization: number }> = {}
+
   // Initialize map with all employees
   employees.forEach(emp => {
     const fullName = `${emp.firstName} ${emp.lastName}`
     utilizationMap[emp._id] = { name: fullName, utilization: 0 }
   })
-  
+
   // Aggregate allocations
   allocations.forEach(alloc => {
     if (alloc.employee?._id && utilizationMap[alloc.employee._id]) {
@@ -152,6 +155,19 @@ const AllocationsPage = () => {
     name: item.name,
     utilization: Math.min(item.utilization, 100),
   }))
+
+  const totalPages = Math.ceil(
+    allocations.length / ITEMS_PER_PAGE
+  )
+
+  const startIndex =
+    (currentPage - 1) * ITEMS_PER_PAGE
+
+  const paginatedAllocations =
+    allocations.slice(
+      startIndex,
+      startIndex + ITEMS_PER_PAGE
+    )
 
   const addFormik = useFormik({
     initialValues: { employee: '', project: '', allocationPercentage: '', startDate: '', endDate: '' },
@@ -224,7 +240,7 @@ const AllocationsPage = () => {
       </MainLayout>
     )
   }
-                                      
+
   return (
     <MainLayout>
       <div className="space-y-5 px-4 py-6 sm:px-6">
@@ -262,10 +278,10 @@ const AllocationsPage = () => {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[600px] text-sm">
               <thead className="border-b border-slate-200 bg-slate-50">
-                <tr>{['Employee','Project','Allocation','Period','Actions'].map(h => <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 sm:px-6">{h}</th>)}</tr>
+                <tr>{['Employee', 'Project', 'Allocation', 'Period', 'Actions'].map(h => <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 sm:px-6">{h}</th>)}</tr>
               </thead>
               <tbody>
-                {allocations.map(a => (
+                {paginatedAllocations.map(a => (
                   <tr key={a._id} className="border-b border-slate-100 hover:bg-slate-50">
                     <td className="px-4 py-3 font-medium text-slate-900 sm:px-6">
                       {a.employee ? `${a.employee.firstName} ${a.employee.lastName}` : 'Unassigned'}
@@ -297,6 +313,33 @@ const AllocationsPage = () => {
             </table>
           </div>
         </div>
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center gap-2 mt-4">
+            <button
+              disabled={currentPage === 1}
+              onClick={() =>
+                setCurrentPage(currentPage - 1)
+              }
+              className="px-3 py-1 rounded border disabled:opacity-50"
+            >
+              Previous
+            </button>
+
+            <span className="text-sm font-medium">
+              Page {currentPage} of {totalPages}
+            </span>
+
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() =>
+                setCurrentPage(currentPage + 1)
+              }
+              className="px-3 py-1 rounded border disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Add Modal */}

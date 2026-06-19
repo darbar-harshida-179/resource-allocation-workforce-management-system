@@ -38,6 +38,9 @@ const AdminLeaveView = () => {
   const [activeTab, setActiveTab] = useState('All')
   const [leaves, setLeaves] = useState<Leave[]>([])
   const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+
+  const ITEMS_PER_PAGE = 5
 
   const fetchAllLeaves = async () => {
     try {
@@ -74,8 +77,18 @@ const AdminLeaveView = () => {
       toast.error(err?.response?.data?.message || 'Failed to reject leave')
     }
   }
+  const filtered = activeTab === 'All'
+    ? leaves
+    : leaves.filter(l => l.status === activeTab)
 
-  const filtered = activeTab === 'All' ? leaves : leaves.filter(l => l.status === activeTab)
+  const paginatedLeaves = filtered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  )
+
+  const totalPages = Math.ceil(
+    filtered.length / ITEMS_PER_PAGE
+  )
 
   if (loading) {
     return (
@@ -103,10 +116,10 @@ const AdminLeaveView = () => {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[650px] text-sm">
             <thead className="border-b border-slate-200 bg-slate-50">
-              <tr>{['Employee','Type','From','To','Reason','Status','Actions'].map(h => <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 sm:px-6">{h}</th>)}</tr>
+              <tr>{['Employee', 'Type', 'From', 'To', 'Reason', 'Status', 'Actions'].map(h => <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 sm:px-6">{h}</th>)}</tr>
             </thead>
             <tbody>
-              {filtered.map(l => (
+              {paginatedLeaves.map(l => (
                 <tr key={l._id} className="border-b border-slate-100 hover:bg-slate-50">
                   <td className="px-4 py-3 font-medium text-slate-900 sm:px-6">
                     {l.employee ? `${l.employee.firstName} ${l.employee.lastName}` : 'Unknown Employee'}
@@ -132,6 +145,29 @@ const AdminLeaveView = () => {
             </tbody>
           </table>
         </div>
+        {totalPages > 1 && (
+          <div className="flex justify-center gap-2 py-4">
+            <button
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage(prev => prev - 1)}
+              className="rounded border px-3 py-1 disabled:opacity-50"
+            >
+              Previous
+            </button>
+
+            <span className="px-3 py-1">
+              {currentPage} / {totalPages}
+            </span>
+
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => setCurrentPage(prev => prev + 1)}
+              className="rounded border px-3 py-1 disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -143,6 +179,9 @@ const EmployeeLeaveView = () => {
   const [myLeaves, setMyLeaves] = useState<Leave[]>([])
   const [balancesData, setBalancesData] = useState({ casual: 0, sick: 0, earned: 0 })
   const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+
+  const ITEMS_PER_PAGE = 5
 
   const fetchEmployeeData = async () => {
     try {
@@ -166,6 +205,7 @@ const EmployeeLeaveView = () => {
     fetchEmployeeData()
   }, [])
 
+
   const balances = [
     { label: 'Casual Leave', remaining: balancesData.casual, color: 'bg-blue-50', dot: 'bg-blue-500', text: 'text-blue-600' },
     { label: 'Sick Leave', remaining: balancesData.sick, color: 'bg-red-50', dot: 'bg-red-400', text: 'text-red-600' },
@@ -177,7 +217,7 @@ const EmployeeLeaveView = () => {
     validationSchema: Yup.object({
       type: Yup.string().required('Leave type is required'),
       from: Yup.string().required('From date is required'),
-      to: Yup.string().required('To date is required').test('after', 'Must be same or after from date', function(v) { return !this.parent.from || !v || v >= this.parent.from }),
+      to: Yup.string().required('To date is required').test('after', 'Must be same or after from date', function (v) { return !this.parent.from || !v || v >= this.parent.from }),
       reason: Yup.string().trim().required('Reason is required'),
     }),
     onSubmit: async (values, { resetForm }) => {
@@ -198,7 +238,19 @@ const EmployeeLeaveView = () => {
     },
   })
 
-  const filtered = activeTab === 'All' ? myLeaves : myLeaves.filter(l => l.status === activeTab)
+  const filtered = activeTab === 'All'
+    ? myLeaves
+    : myLeaves.filter(l => l.status === activeTab)
+
+  const paginatedLeaves = filtered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  )
+
+  const totalPages = Math.ceil(
+    filtered.length / ITEMS_PER_PAGE
+  )
+
 
   if (loading) {
     return (
@@ -246,10 +298,10 @@ const EmployeeLeaveView = () => {
         <div className="overflow-x-auto">
           <table className="w-full min-w-[400px] text-sm">
             <thead className="border-b border-slate-200 bg-slate-50">
-              <tr>{['Leave Type','From','To','Reason','Status'].map(h => <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 sm:px-6">{h}</th>)}</tr>
+              <tr>{['Leave Type', 'From', 'To', 'Reason', 'Status'].map(h => <th key={h} className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 sm:px-6">{h}</th>)}</tr>
             </thead>
             <tbody>
-              {filtered.map(l => (
+              {paginatedLeaves.map(l => (
                 <tr key={l._id} className="border-b border-slate-100 hover:bg-slate-50">
                   <td className="px-4 py-3 sm:px-6"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${typeColor(l.leaveType)}`}>{typeLabel(l.leaveType)}</span></td>
                   <td className="px-4 py-3 text-slate-600 sm:px-6">{new Date(l.startDate).toLocaleDateString()}</td>
@@ -258,11 +310,34 @@ const EmployeeLeaveView = () => {
                   <td className="px-4 py-3 sm:px-6"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusColor(l.status)}`}>{statusLabel(l.status)}</span></td>
                 </tr>
               ))}
-              {filtered.length === 0 && <tr><td colSpan={5} className="py-10 text-center text-sm text-slate-400">No leave requests found.</td></tr>}
+              {paginatedLeaves.length === 0 && <tr><td colSpan={5} className="py-10 text-center text-sm text-slate-400">No leave requests found.</td></tr>}
             </tbody>
           </table>
         </div>
       </div>
+      {totalPages > 1 && (
+        <div className="flex justify-center gap-3 mt-4">
+          <button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage(currentPage - 1)}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Previous
+          </button>
+
+          <span>
+            Page {currentPage} of {totalPages}
+          </span>
+
+          <button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage(currentPage + 1)}
+            className="px-3 py-1 border rounded disabled:opacity-50"
+          >
+            Next
+          </button>
+        </div>
+      )}
 
       {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">

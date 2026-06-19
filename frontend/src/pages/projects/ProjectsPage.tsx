@@ -192,6 +192,9 @@ const ProjectsPage = () => {
   const [projects, setProjects] = useState<Project[]>([])
   const [managers, setManagers] = useState<Manager[]>([])
   const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+
+  const ITEMS_PER_PAGE = 6
 
   const fetchProjectsList = async () => {
     try {
@@ -218,6 +221,19 @@ const ProjectsPage = () => {
     fetchProjectsList()
     fetchManagersList()
   }, [])
+
+  const totalPages = Math.ceil(
+    projects.length / ITEMS_PER_PAGE
+  )
+
+  const startIndex =
+    (currentPage - 1) * ITEMS_PER_PAGE
+
+  const paginatedProjects =
+    projects.slice(
+      startIndex,
+      startIndex + ITEMS_PER_PAGE
+    )
 
   // ── Add formik ──
   const addFormik = useFormik({
@@ -321,7 +337,7 @@ const ProjectsPage = () => {
 
         {/* Projects Grid */}
         <div className="grid gap-5 sm:grid-cols-2">
-          {projects.map((project) => (
+          {paginatedProjects.map((project) => (
             <div key={project._id} className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:shadow-md">
               <div className="mb-4 flex items-start justify-between">
                 <div className="flex-1 pr-2">
@@ -370,6 +386,33 @@ const ProjectsPage = () => {
             <p className="text-sm text-slate-400 col-span-full">No projects created yet.</p>
           )}
         </div>
+        {totalPages > 1 && (
+          <div className="flex justify-center gap-2 mt-6">
+            <button
+              disabled={currentPage === 1}
+              onClick={() =>
+                setCurrentPage(currentPage - 1)
+              }
+              className="px-3 py-1 border rounded"
+            >
+              Previous
+            </button>
+
+            <span>
+              {currentPage} / {totalPages}
+            </span>
+
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() =>
+                setCurrentPage(currentPage + 1)
+              }
+              className="px-3 py-1 border rounded"
+            >
+              Next
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── Add Modal ── */}
