@@ -312,7 +312,9 @@ const AllocationsPage = () => {
               </tbody>
             </table>
           </div>
-           {totalPages > 1 && (
+
+        </div>
+        {totalPages > 1 && (
           <div className="mt-6 flex items-center justify-center gap-3 border-t border-slate-200 pt-4">
             <button
               disabled={currentPage === 1}
@@ -335,8 +337,7 @@ const AllocationsPage = () => {
             </button>
           </div>
         )}
-        </div>
-       
+
       </div>
 
       {/* Add Modal */}
