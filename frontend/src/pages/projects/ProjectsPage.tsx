@@ -390,27 +390,24 @@ const ProjectsPage = () => {
           <div className="flex justify-center gap-2 mt-6">
             <button
               disabled={currentPage === 1}
-              onClick={() =>
-                setCurrentPage(currentPage - 1)
-              }
-              className="px-3 py-1 border rounded"
+              onClick={() => setCurrentPage(currentPage - 1)}
+              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
             >
               Previous
             </button>
 
-            <span>
-              {currentPage} / {totalPages}
+            <span className="rounded-lg bg-indigo-50 px-4 py-2 text-sm font-semibold text-indigo-700">
+              Page {currentPage} of {totalPages}
             </span>
 
             <button
               disabled={currentPage === totalPages}
-              onClick={() =>
-                setCurrentPage(currentPage + 1)
-              }
-              className="px-3 py-1 border rounded"
+              onClick={() => setCurrentPage(currentPage + 1)}
+              className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:bg-slate-300"
             >
               Next
             </button>
+
           </div>
         )}
       </div>
