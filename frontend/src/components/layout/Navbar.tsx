@@ -29,7 +29,6 @@ const Navbar = ({ onMobileMenuClick }: NavbarProps) => {
           </div>
         </div>
 
-        {/* Right — user info */}
         <div className="flex items-center gap-3">
           <div className="hidden text-right sm:block">
             <p className="text-sm font-semibold text-slate-900">

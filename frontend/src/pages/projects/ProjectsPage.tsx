@@ -151,7 +151,6 @@ const validationSchema = Yup.object({
   manager: Yup.string().required('Manager is required'),
 })
 
-// ── Employee read-only view ──
 const EmployeeProjectsView = ({ projects }: { projects: Project[] }) => {
   return (
     <div className="space-y-6 px-4 py-6 sm:px-6">
@@ -185,7 +184,6 @@ const EmployeeProjectsView = ({ projects }: { projects: Project[] }) => {
   )
 }
 
-// ── Admin/Manager full view ──
 const ProjectsPage = () => {
   const { user } = useAuth()
   const [showAddModal, setShowAddModal] = useState(false)

@@ -51,6 +51,10 @@ const leaveSchema = new Schema<ILeave>(
         timestamps: true,
     }
 );
+leaveSchema.index({ employee: 1 });
+leaveSchema.index({ status: 1 });
+leaveSchema.index({ startDate: 1 });
+leaveSchema.index({ endDate: 1 });
 
 const Leave = mongoose.model<ILeave>(
     "Leave",

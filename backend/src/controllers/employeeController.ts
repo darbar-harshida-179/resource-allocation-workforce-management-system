@@ -8,15 +8,30 @@ export const getAllEmployees = async (
     res: Response
 ): Promise<void> => {
     try {
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 10;
+
+        const skip = (page - 1) * limit;
+
+        const total = await User.countDocuments({
+            role: UserRole.EMPLOYEE,
+        });
+
         const employees = await User.find({
             role: UserRole.EMPLOYEE,
-        }).select(
-            "-password -refreshToken -verificationToken -resetPasswordToken"
-        );
+        })
+            .skip(skip)
+            .limit(limit)
+            .select(
+                "-password -refreshToken -verificationToken -resetPasswordToken"
+            );
 
         res.status(200).json({
             success: true,
-            count: employees.length,
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
             data: employees,
         });
     } catch (error) {

@@ -16,7 +16,7 @@ const barColor = (v: number) => v === 100 ? 'bg-red-500' : v >= 50 ? 'bg-amber-5
 
 const ManagerDashboard = () => {
   const auth = useAuth()
-  const [dashData, setDashData] = useState({ myProjects: 0, assignedResources: 0, pendingTimesheets: 0, pendingLeaveRequests: 0 })
+  const [dashData, setDashData] = useState({ myProjects: 0, teamMembers: 0, pendingTimesheets: 0, pendingLeaves: 0 })
   const [leaves, setLeaves] = useState<any[]>([])
   const [timesheets, setTimesheets] = useState<any[]>([])
   const [utilizationData, setUtilizationData] = useState<{ employeeName: string; department: string; utilization: number }[]>([])
@@ -33,7 +33,12 @@ const ManagerDashboard = () => {
         getAllocations(),
       ])
 
-      setDashData(dashRes.data)
+      setDashData({
+        myProjects: dashRes.data.myProjects,
+        teamMembers: dashRes.data.teamMembers,
+        pendingTimesheets: dashRes.data.pendingTimesheets,
+        pendingLeaves: dashRes.data.pendingLeaves,
+      })
 
       // Filter manager's own projects
       const allProjects: any[] = projRes.data || []
@@ -85,7 +90,7 @@ const ManagerDashboard = () => {
       await approveLeave(id)
       toast.success('Leave approved successfully')
       setLeaves(prev => prev.filter(l => l._id !== id))
-      setDashData(prev => ({ ...prev, pendingLeaveRequests: Math.max(0, prev.pendingLeaveRequests - 1) }))
+      setDashData(prev => ({ ...prev, pendingLeaves: Math.max(0, prev.pendingLeaves - 1) }))
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Failed to approve leave')
     }
@@ -96,7 +101,7 @@ const ManagerDashboard = () => {
       await rejectLeave(id)
       toast.success('Leave rejected successfully')
       setLeaves(prev => prev.filter(l => l._id !== id))
-      setDashData(prev => ({ ...prev, pendingLeaveRequests: Math.max(0, prev.pendingLeaveRequests - 1) }))
+      setDashData(prev => ({ ...prev, pendingLeaves: Math.max(0, prev.pendingLeaves - 1) }))
     } catch (err: any) {
       toast.error(err?.response?.data?.message || 'Failed to reject leave')
     }
@@ -126,9 +131,9 @@ const ManagerDashboard = () => {
 
   const statCards = [
     { label: 'My Projects', value: dashData.myProjects, sub: 'Active', icon: <IoFolderOutline size={24} className="text-blue-500" />, bg: 'bg-blue-50' },
-    { label: 'Assigned Resources', value: dashData.assignedResources, sub: 'Across projects', icon: <IoPeopleOutline size={24} className="text-indigo-500" />, bg: 'bg-indigo-50' },
+    { label: 'Team Members', value: dashData.teamMembers, sub: 'Across projects', icon: <IoPeopleOutline size={24} className="text-indigo-500" />, bg: 'bg-indigo-50' },
     { label: 'Pending Timesheets', value: dashData.pendingTimesheets, sub: 'Awaiting review', icon: <IoDocumentTextOutline size={24} className="text-amber-500" />, bg: 'bg-amber-50' },
-    { label: 'Leave Requests', value: dashData.pendingLeaveRequests, sub: 'Pending approval', icon: <IoCalendarOutline size={24} className="text-green-500" />, bg: 'bg-green-50' },
+    { label: 'Pending Leaves', value: dashData.pendingLeaves, sub: 'Pending approval', icon: <IoCalendarOutline size={24} className="text-green-500" />, bg: 'bg-green-50' },
   ]
 
   if (loading) {

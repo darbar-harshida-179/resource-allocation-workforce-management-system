@@ -17,9 +17,9 @@ const COLORS = ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6'
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
     totalEmployees: 0,
-    activeProjects: 0,
-    resourcesAllocated: 0,
-    employeesOnLeave: 0,
+    totalProjects: 0,
+    activeAllocations: 0,
+    pendingLeaves: 0,
   })
   const [projectStatusData, setProjectStatusData] = useState<{ name: string; value: number }[]>([])
   const [departmentData, setDepartmentData] = useState<{ name: string; value: number }[]>([])
@@ -39,9 +39,9 @@ const AdminDashboard = () => {
 
         setStats({
           totalEmployees: dashRes.data.totalEmployees,
-          activeProjects: dashRes.data.activeProjects,
-          resourcesAllocated: dashRes.data.resourcesAllocated,
-          employeesOnLeave: dashRes.data.employeesOnLeave,
+          totalProjects: dashRes.data.totalProjects,
+          activeAllocations: dashRes.data.activeAllocations,
+          pendingLeaves: dashRes.data.pendingLeaves,
         })
 
         // Project status breakdown
@@ -94,9 +94,9 @@ const AdminDashboard = () => {
 
   const statCards = [
     { label: 'Total Employees', value: stats.totalEmployees, sub: 'All employees', icon: <IoPeopleOutline size={26} className="text-indigo-500" />, bg: 'bg-indigo-50' },
-    { label: 'Active Projects', value: stats.activeProjects, sub: 'In progress', icon: <IoFolderOutline size={26} className="text-blue-500" />, bg: 'bg-blue-50' },
-    { label: 'Allocated Resources', value: stats.resourcesAllocated, sub: 'Current allocations', icon: <IoTimeOutline size={26} className="text-amber-500" />, bg: 'bg-amber-50' },
-    { label: 'On Leave Today', value: stats.employeesOnLeave, sub: 'Approved leaves', icon: <IoCalendarOutline size={26} className="text-green-500" />, bg: 'bg-green-50' },
+    { label: 'Total Projects', value: stats.totalProjects, sub: 'All projects', icon: <IoFolderOutline size={26} className="text-blue-500" />, bg: 'bg-blue-50' },
+    { label: 'Active Allocations', value: stats.activeAllocations, sub: 'Current active allocations', icon: <IoTimeOutline size={26} className="text-amber-500" />, bg: 'bg-amber-50' },
+    { label: 'Pending Leaves', value: stats.pendingLeaves, sub: 'Awaiting approval', icon: <IoCalendarOutline size={26} className="text-green-500" />, bg: 'bg-green-50' },
   ]
 
   if (loading) {

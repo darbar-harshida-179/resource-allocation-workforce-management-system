@@ -1,5 +1,10 @@
 // backend/src/server.ts
 
+import crypto from "crypto";
+if (!global.crypto) {
+  (global as any).crypto = crypto as any;
+}
+
 import dotenv from "dotenv";
 import connectDB from "./config/db";
 import app from "./app";

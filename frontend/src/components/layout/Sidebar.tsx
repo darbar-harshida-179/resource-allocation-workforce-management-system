@@ -71,10 +71,8 @@ const Sidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProp
           ${collapsed ? 'w-16' : 'w-64'}
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0`}
             >
-                {/* Header — hamburger replaces W when collapsed */}
                 <div className="flex h-16 shrink-0 items-center justify-center border-b border-slate-700 px-3">
                     {collapsed ? (
-                        /* collapsed: show only hamburger to expand */
                         <button
                             onClick={onToggle}
                             className="flex h-9 w-9 items-center justify-center rounded-lg text-slate-300 transition hover:bg-slate-800 hover:text-white"
@@ -82,7 +80,6 @@ const Sidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProp
                             <IoMenu size={22} />
                         </button>
                     ) : (
-                        /* expanded: W + WorkForce + hamburger to collapse */
                         <div className="flex w-full items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
@@ -100,7 +97,6 @@ const Sidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProp
                     )}
                 </div>
 
-                {/* Nav — icons only when collapsed, clicking navigates WITHOUT expanding */}
                 <nav className="flex-1 overflow-y-auto space-y-1 px-2 py-4">
                     {navItems.map((item) => (
                         <Link
@@ -118,7 +114,6 @@ const Sidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProp
                     ))}
                 </nav>
 
-                {/* User info */}
                 <div className="border-t border-slate-700 px-3 py-3">
                     {collapsed ? (
                         <div className="flex justify-center">
@@ -144,7 +139,6 @@ const Sidebar = ({ collapsed, onToggle, mobileOpen, onMobileClose }: SidebarProp
                     )}
                 </div>
 
-                {/* Sign out */}
                 <div className="border-t border-slate-700 px-3 py-3">
                     {collapsed ? (
                         <button

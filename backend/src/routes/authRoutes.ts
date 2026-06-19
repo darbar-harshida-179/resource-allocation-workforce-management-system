@@ -13,7 +13,7 @@ import {
 } from "../controllers/authController";
 
 import { protect } from "../middleware/authMiddleware";
-import { registerValidation } from "../validations/authValidation";
+import { registerValidation } from "../validators/authValidator";
 import { validateRequest } from "../middleware/validationMiddleware";
 
 const router = Router();

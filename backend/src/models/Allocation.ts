@@ -46,6 +46,12 @@ const allocationSchema = new Schema<IAllocation>(
     }
 );
 
+// indexes
+allocationSchema.index({ employee: 1 });
+allocationSchema.index({ project: 1 });
+allocationSchema.index({ startDate: 1 });
+allocationSchema.index({ endDate: 1 });
+
 const Allocation = mongoose.model<IAllocation>(
     "Allocation",
     allocationSchema

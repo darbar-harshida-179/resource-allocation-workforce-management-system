@@ -12,7 +12,18 @@ export const applyLeave = async (
     try {
 
         const { leaveType, startDate, endDate, reason, } = req.body;
-        
+
+        if (
+            new Date(endDate).getTime() <
+            new Date(startDate).getTime()
+        ) {
+            res.status(400).json({
+                success: false,
+                message: "End date cannot be before start date",
+            });
+            return;
+        }
+
         const leave = await Leave.create({
             employee: (req as any).user.id,
             leaveType,
@@ -38,7 +49,16 @@ export const getLeaves = async (
     res: Response
 ): Promise<void> => {
     try {
+        const page = Number(req.query.page) || 1;
+        const limit = Number(req.query.limit) || 10;
+
+        const skip = (page - 1) * limit;
+
+        const total = await Leave.countDocuments();
+
         const leaves = await Leave.find()
+            .skip(skip)
+            .limit(limit)
             .populate(
                 "employee",
                 "firstName lastName email role"
@@ -46,7 +66,10 @@ export const getLeaves = async (
 
         res.status(200).json({
             success: true,
-            count: leaves.length,
+            page,
+            limit,
+            total,
+            totalPages: Math.ceil(total / limit),
             data: leaves,
         });
     } catch (error) {
@@ -175,6 +198,22 @@ export const approveLeave = async (
         }
 
         await leaveBalance.save();
+
+        const overlappingAllocation =
+            await Allocation.findOne({
+                employee: leave.employee,
+                startDate: { $lte: leave.endDate },
+                endDate: { $gte: leave.startDate },
+            });
+
+        if (overlappingAllocation) {
+            res.status(400).json({
+                success: false,
+                message:
+                    "Employee has project allocation during this leave period",
+            });
+            return;
+        }
 
         leave.status = "approved";
 

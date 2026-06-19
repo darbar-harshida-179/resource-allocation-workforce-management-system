@@ -52,10 +52,9 @@ const EmployeeDashboard = () => {
     .reduce((sum: number, t: any) => sum + (t.hours || 0), 0)
 
   const statItems = [
-    { label: 'Current Projects', value: dashData?.currentProjects ?? 0, sub: 'Active assignments', icon: <IoFolderOutline size={24} className="text-blue-500" />, bg: 'bg-blue-50' },
-    { label: "Today's Hours", value: loggedToday + 'h', sub: 'Logged today', icon: <IoTimeOutline size={24} className="text-indigo-500" />, bg: 'bg-indigo-50' },
+    { label: 'Assigned Projects', value: dashData?.assignedProjects ?? 0, sub: 'Active assignments', icon: <IoFolderOutline size={24} className="text-blue-500" />, bg: 'bg-blue-50' },
     { label: 'Leave Balance', value: totalLeaveRemaining, sub: 'Days remaining', icon: <IoCalendarOutline size={24} className="text-green-500" />, bg: 'bg-green-50' },
-    { label: 'Monthly Hours', value: (dashData?.monthlyHours ?? 0) + 'h', sub: 'Approved hours', icon: <IoBarChartOutline size={24} className="text-amber-500" />, bg: 'bg-amber-50' },
+    { label: 'Submitted Timesheets', value: dashData?.submittedTimesheets ?? 0, sub: 'Total submitted', icon: <IoTimeOutline size={24} className="text-indigo-500" />, bg: 'bg-indigo-50' },
   ]
 
   const activeProjects: any[] = (dashData?.todaysTasks || []).filter((t: any) => t.project?.status !== 'completed')
@@ -79,7 +78,7 @@ const EmployeeDashboard = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
           {statItems.map((s) => (
             <div key={s.label} className="rounded-2xl bg-white p-5 shadow-sm border border-slate-100">
               <div className="flex items-center justify-between">

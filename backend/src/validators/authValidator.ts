@@ -1,4 +1,4 @@
-// backend/src/validations/authValidation.ts
+// backend/src/validations/authValidator.ts
 
 import { body } from "express-validator";
 

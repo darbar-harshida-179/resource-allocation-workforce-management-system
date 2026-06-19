@@ -1,3 +1,8 @@
+import crypto from "crypto";
+if (!global.crypto) {
+  (global as any).crypto = crypto as any;
+}
+
 import mongoose from 'mongoose'
 import User, { UserRole } from './src/models/User'
 import bcrypt from 'bcryptjs'
